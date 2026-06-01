@@ -1,0 +1,24 @@
+require("@nomicfoundation/hardhat-toolbox");
+require("hardhat-gas-reporter");
+require("dotenv").config();
+
+/** @type import('hardhat/config').HardhatUserConfig */
+module.exports = {
+  solidity: {
+    version: "0.8.24",
+    settings: {
+      evmVersion: "cancun",
+    },
+  },
+  networks: {
+    amoy: {
+      url: process.env.AMOY_RPC_URL || "",
+      chainId: 80002,
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+  },
+  gasReporter: {
+    enabled: true,
+    currency: "USD",
+  },
+};
