@@ -1,19 +1,10 @@
 import { ethers } from "ethers";
+import LedgerABI from "../lib/RecyclingLedgerABI.json";
+import SealABI from "../lib/GreenSealABI.json";
 
 const LEDGER_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_LEDGER;
 const SEAL_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_SEAL;
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL;
-
-// ABIs importadas dos artifacts compilados pelo Hardhat
-let LedgerABI, SealABI;
-try {
-  LedgerABI = require("../../artifacts/contracts/RecyclingLedger.sol/RecyclingLedger.json").abi;
-  SealABI = require("../../artifacts/contracts/GreenSeal.sol/GreenSeal.json").abi;
-} catch {
-  // Em ambiente de build sem artifacts, usar ABI mínima para leitura
-  LedgerABI = [];
-  SealABI = [];
-}
 
 /**
  * Retorna uma instância read-only do RecyclingLedger via JsonRpcProvider
