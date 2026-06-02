@@ -116,7 +116,6 @@ NEXT_PUBLIC_RPC_URL=https://rpc-amoy.polygon.technology
 NEXT_PUBLIC_CONTRACT_LEDGER=0x...
 NEXT_PUBLIC_CONTRACT_SEAL=0x...
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-NEXT_PUBLIC_PINATA_JWT=seu_jwt_pinata
 ```
 
 ### Compilar contratos

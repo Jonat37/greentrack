@@ -19,19 +19,7 @@ export default function Dashboard() {
         const seal = getSealReadOnly();
 
         const totalPesagens = Number(await ledger.totalPesagens());
-
-        // Somar todos os kgPorEmpresa iterando pelas pesagens validadas
-        // (abordagem simples: soma kgPorEmpresa das empresas únicas encontradas)
-        const empresas = new Set();
-        let totalKg = 0;
-        for (let i = 1; i <= totalPesagens; i++) {
-          const p = await ledger.pesagens(i);
-          if (Number(p.status) === 1 && p.empresaId && !empresas.has(p.empresaId)) {
-            empresas.add(p.empresaId);
-            totalKg += Number(await ledger.kgPorEmpresa(p.empresaId));
-          }
-        }
-
+        const totalKg = Number(await ledger.totalKgValidadoGlobal());
         const nextTokenId = Number(await seal.nextTokenId());
 
         setMetricas({ totalPesagens, totalKg, totalSelos: nextTokenId });

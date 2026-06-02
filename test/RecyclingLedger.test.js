@@ -150,6 +150,33 @@ describe("RecyclingLedger", function () {
       await expect(ledger.connect(stranger).validarPesagem(1)).to.be.reverted;
     });
 
+    it("deve reverter com 'Pesagem inexistente' para id 0", async function () {
+      await expect(ledger.connect(auditor).validarPesagem(0)).to.be.revertedWith("Pesagem inexistente");
+    });
+
+    it("deve reverter com 'Pesagem inexistente' para id inexistente", async function () {
+      await expect(ledger.connect(auditor).validarPesagem(999)).to.be.revertedWith("Pesagem inexistente");
+    });
+
+    it("deve incrementar totalKgValidadoGlobal ao validar", async function () {
+      await ledger.connect(auditor).validarPesagem(1);
+      expect(await ledger.totalKgValidadoGlobal()).to.equal(100n);
+    });
+
+    it("deve adicionar empresa à lista getEmpresas()", async function () {
+      await ledger.connect(auditor).validarPesagem(1);
+      const lista = await ledger.getEmpresas();
+      expect(lista).to.include(empresaId);
+    });
+
+    it("não deve duplicar empresa em getEmpresas() com múltiplas validações", async function () {
+      await ledger.connect(cooperativa).registrarPesagem("PET", 50n, "QmHash2", empresaId);
+      await ledger.connect(auditor).validarPesagem(1);
+      await ledger.connect(auditor).validarPesagem(2);
+      const lista = await ledger.getEmpresas();
+      expect(lista.filter((e) => e === empresaId).length).to.equal(1);
+    });
+
     it("deve chamar greenSeal.emitirSelo() quando kgPorEmpresa atingir múltiplo de 1000", async function () {
       // Register and validate enough kg to trigger seal emission
       await ledger.connect(cooperativa).registrarPesagem("PET", 900n, "QmHash2", empresaId);
@@ -194,6 +221,10 @@ describe("RecyclingLedger", function () {
 
     it("deve reverter se chamada por endereço sem AUDITOR_ROLE", async function () {
       await expect(ledger.connect(stranger).rejeitarPesagem(1, motivo)).to.be.reverted;
+    });
+
+    it("deve reverter com 'Pesagem inexistente' para id inexistente", async function () {
+      await expect(ledger.connect(auditor).rejeitarPesagem(999, motivo)).to.be.revertedWith("Pesagem inexistente");
     });
   });
 

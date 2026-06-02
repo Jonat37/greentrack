@@ -42,8 +42,10 @@ export function getSealReadOnly() {
   return new ethers.Contract(SEAL_ADDRESS, SealABI, provider);
 }
 
+const AMOY_CHAIN_ID = "0x13882";
+
 /**
- * Conecta a carteira MetaMask do usuário e retorna o signer
+ * Conecta a carteira MetaMask do usuário, valida a rede Polygon Amoy e retorna o signer
  * @returns {Promise<{signer: ethers.Signer, address: string}>}
  */
 export async function conectarCarteira() {
@@ -52,6 +54,34 @@ export async function conectarCarteira() {
   }
 
   await window.ethereum.request({ method: "eth_requestAccounts" });
+
+  const currentChainId = await window.ethereum.request({ method: "eth_chainId" });
+
+  if (currentChainId !== AMOY_CHAIN_ID) {
+    try {
+      await window.ethereum.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: AMOY_CHAIN_ID }],
+      });
+    } catch (switchError) {
+      if (switchError.code === 4902) {
+        await window.ethereum.request({
+          method: "wallet_addEthereumChain",
+          params: [
+            {
+              chainId: AMOY_CHAIN_ID,
+              chainName: "Polygon Amoy Testnet",
+              nativeCurrency: { name: "MATIC", symbol: "MATIC", decimals: 18 },
+              rpcUrls: ["https://rpc-amoy.polygon.technology/"],
+              blockExplorerUrls: ["https://amoy.polygonscan.com/"],
+            },
+          ],
+        });
+      } else {
+        throw new Error("Conecte sua carteira na rede Polygon Amoy para continuar.");
+      }
+    }
+  }
 
   const provider = new ethers.BrowserProvider(window.ethereum);
   const signer = await provider.getSigner();

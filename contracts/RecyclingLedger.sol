@@ -35,9 +35,12 @@ contract RecyclingLedger is AccessControl {
 
     // ─── Estado ───────────────────────────────────────────────────────────────
     uint256 public totalPesagens;
+    uint256 public totalKgValidadoGlobal;
     mapping(uint256 => Pesagem) public pesagens;
     mapping(string => uint256[]) public pesagensPorEmpresa;
     mapping(string => uint256) public kgPorEmpresa;
+    string[] private empresas;
+    mapping(string => bool) private empresaRegistrada;
     IGreenSeal public greenSeal;
     uint256 public constant KG_PARA_SELO = 1000;
 
@@ -102,6 +105,7 @@ contract RecyclingLedger is AccessControl {
      * @param id ID da pesagem a ser validada
      */
     function validarPesagem(uint256 id) external onlyRole(AUDITOR_ROLE) {
+        require(id > 0 && id <= totalPesagens, "Pesagem inexistente");
         Pesagem storage p = pesagens[id];
         require(p.status == Status.PENDENTE, "Status invalido");
 
@@ -110,6 +114,12 @@ contract RecyclingLedger is AccessControl {
 
         pesagensPorEmpresa[p.empresaId].push(id);
         kgPorEmpresa[p.empresaId] += p.pesoKg;
+
+        if (!empresaRegistrada[p.empresaId]) {
+            empresaRegistrada[p.empresaId] = true;
+            empresas.push(p.empresaId);
+        }
+        totalKgValidadoGlobal += p.pesoKg;
 
         emit PesagemValidada(id, msg.sender);
 
@@ -122,6 +132,7 @@ contract RecyclingLedger is AccessControl {
      * @param motivo Justificativa da rejeição
      */
     function rejeitarPesagem(uint256 id, string calldata motivo) external onlyRole(AUDITOR_ROLE) {
+        require(id > 0 && id <= totalPesagens, "Pesagem inexistente");
         Pesagem storage p = pesagens[id];
         require(p.status == Status.PENDENTE, "Status invalido");
 
@@ -140,6 +151,14 @@ contract RecyclingLedger is AccessControl {
      */
     function getPesagensPorEmpresa(string calldata empresaId) external view returns (uint256[] memory) {
         return pesagensPorEmpresa[empresaId];
+    }
+
+    /**
+     * @notice Retorna a lista de IDs de empresas que tiveram pesagens validadas
+     * @return Array de empresaId registradas
+     */
+    function getEmpresas() external view returns (string[] memory) {
+        return empresas;
     }
 
     // ─── Função interna ───────────────────────────────────────────────────────

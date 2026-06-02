@@ -86,13 +86,30 @@ async function main() {
   const totalKg = await ledger.kgPorEmpresa("EMPRESA_ESG_001");
   const totalSelos = await seal.totalSelosPorEmpresa("EMPRESA_ESG_001");
   const totalPesagens = await ledger.totalPesagens();
+  const totalKgGlobal = await ledger.totalKgValidadoGlobal();
 
   console.log("\n─────────────────────────────────────");
   console.log("📊 Resultado Final:");
   console.log(`   Total de pesagens registradas: ${totalPesagens}`);
   console.log(`   Total de kg validados (EMPRESA_ESG_001): ${totalKg} kg`);
+  console.log(`   Total de kg validados (global): ${totalKgGlobal} kg`);
   console.log(`   Total de Selos Verdes emitidos: ${totalSelos}`);
   console.log("─────────────────────────────────────");
+
+  // Validações finais
+  if (totalKg.toString() !== "1050") {
+    throw new Error(`Total de kg incorreto: esperado 1050, obtido ${totalKg}`);
+  }
+
+  if (totalSelos.toString() !== "1") {
+    throw new Error(`Selos incorretos: esperado 1, obtido ${totalSelos}`);
+  }
+
+  if (totalKgGlobal.toString() !== "1050") {
+    throw new Error(`Total global de kg incorreto: esperado 1050, obtido ${totalKgGlobal}`);
+  }
+
+  console.log("\n✅ Todas as validações passaram com sucesso!");
 }
 
 main()
