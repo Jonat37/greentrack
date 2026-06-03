@@ -44,6 +44,21 @@ async function main() {
   fs.writeFileSync(deploymentsPath, JSON.stringify(deployments, null, 2));
   console.log("\n📝 Endereços salvos em deployments.json");
   console.log(JSON.stringify(deployments, null, 2));
+
+  // Copiar ABIs para frontend/lib/
+  const libDir = path.join(__dirname, "..", "frontend", "lib");
+  if (!fs.existsSync(libDir)) fs.mkdirSync(libDir, { recursive: true });
+
+  const ledgerArtifact = JSON.parse(
+    fs.readFileSync(path.join(__dirname, "..", "artifacts", "contracts", "RecyclingLedger.sol", "RecyclingLedger.json"), "utf8")
+  );
+  const sealArtifact = JSON.parse(
+    fs.readFileSync(path.join(__dirname, "..", "artifacts", "contracts", "GreenSeal.sol", "GreenSeal.json"), "utf8")
+  );
+
+  fs.writeFileSync(path.join(libDir, "RecyclingLedgerABI.json"), JSON.stringify(ledgerArtifact.abi, null, 2));
+  fs.writeFileSync(path.join(libDir, "GreenSealABI.json"), JSON.stringify(sealArtifact.abi, null, 2));
+  console.log("\n📋 ABIs copiados para frontend/lib/");
 }
 
 main()

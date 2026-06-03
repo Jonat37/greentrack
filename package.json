@@ -6,6 +6,7 @@
     "test": "npx hardhat test",
     "compile": "npx hardhat compile",
     "deploy:amoy": "npx hardhat run scripts/deploy.js --network amoy",
+    "deploy:sepolia": "npx hardhat run scripts/deploy.js --network sepolia",
     "deploy:local": "npx hardhat run scripts/deploy.js --network localhost"
   },
   "keywords": [],
