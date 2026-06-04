@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useWallet } from "../../contexts/WalletContext";
-import { getLedgerReadOnly, getSealReadOnly } from "../../utils/contract";
+import { getLedgerReadOnly, getSealReadOnly, getVerifyUrl } from "../../utils/contract";
 import { getIPFSUrl } from "../../utils/ipfs";
 import QRDisplay from "../../components/QRDisplay";
 
@@ -223,12 +223,18 @@ export default function CooperativaPage() {
                         </div>
                       </div>
                       <p className="text-gray-600 text-xs mb-3">{s.kg.toLocaleString()} kg certificados</p>
-                      <QRDisplay empresaId={s.empresaId} compact />
+                      <QRDisplay url={getVerifyUrl(s.tokenId)} compact />
+                      <Link
+                        href={`/verify/11155111/${process.env.NEXT_PUBLIC_CONTRACT_SEAL}/${s.tokenId}`}
+                        className="mt-3 block text-center bg-green-600 hover:bg-green-700 text-white text-xs font-semibold py-2 rounded-lg transition-colors"
+                      >
+                        🔍 Ver auditoria
+                      </Link>
                       <Link
                         href={`/empresa/${encodeURIComponent(s.empresaId)}`}
-                        className="mt-3 block text-center text-green-700 border border-green-300 hover:bg-green-50 text-xs font-semibold py-2 rounded-lg transition-colors"
+                        className="block text-center text-green-700 border border-green-300 hover:bg-green-50 text-xs font-semibold py-2 rounded-lg transition-colors"
                       >
-                        Abrir página pública →
+                        Página pública →
                       </Link>
                     </div>
                   ))}

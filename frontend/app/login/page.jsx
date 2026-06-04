@@ -77,7 +77,7 @@ export default function LoginPage() {
             <span className="text-2xl">🌿</span>
             <span className="text-xl font-extrabold tracking-tight">GreenTrack</span>
           </Link>
-          <Link href="/#dashboard" className="text-green-200 text-sm hover:text-white transition-colors">
+          <Link href="/dashboard" className="text-green-200 text-sm hover:text-white transition-colors">
             📊 Dashboard público
           </Link>
         </div>

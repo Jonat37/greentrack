@@ -66,12 +66,12 @@ export default function Home() {
           >
             🦊 Entrar / Cadastrar
           </Link>
-          <a
-            href="#dashboard"
+          <Link
+            href="/dashboard"
             className="border-2 border-white text-white hover:bg-green-600 font-bold px-8 py-4 rounded-2xl text-base transition-colors"
           >
-            📊 Ver Dashboard Público
-          </a>
+            📊 Dashboard Público
+          </Link>
         </div>
       </section>
 
