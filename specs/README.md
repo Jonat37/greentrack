@@ -17,9 +17,10 @@ Documentação de especificação de cada funcionalidade principal da plataforma
 | [SPEC-007](SPEC-007-WEIGHING-REJECTION.md) | Rejeição de Pesagem pelo Auditor | `/auditor` | Auditor | ✅ Implementado |
 | [SPEC-008](SPEC-008-GREEN-SEAL-EMISSION.md) | Emissão Automática do Selo Verde (NFT) | Interno | Sistema | ✅ Implementado |
 | [SPEC-009](SPEC-009-ADMIN-GOVERNANCE.md) | Painel Administrativo de Governança | `/admin` | ADM | ✅ Implementado |
-| [SPEC-010](SPEC-010-PUBLIC-DASHBOARD.md) | Dashboard Público de Métricas | `/` | Público | ✅ Implementado |
+| [SPEC-010](SPEC-010-PUBLIC-DASHBOARD.md) | Dashboard Público (métricas, ranking, selos) | `/dashboard` | Público | ✅ Implementado |
 | [SPEC-011](SPEC-011-COMPANY-CERTIFICATE.md) | Página Pública de Certificado de Impacto | `/empresa/[id]` | Público | ✅ Implementado |
 | [SPEC-012](SPEC-012-COOPERATIVE-PANEL.md) | Painel da Cooperativa | `/cooperativa` | Cooperativa | ✅ Implementado |
+| [SPEC-013](SPEC-013-SEAL-VERIFICATION.md) | Verificação do Selo Verde (QR Code) | `/verify/[chainId]/[contractAddress]/[tokenId]` | Público | ✅ Implementado |
 
 ---
 

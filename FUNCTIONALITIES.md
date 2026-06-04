@@ -182,20 +182,19 @@ ipfs://greentrack/{empresaId}/{tokenId}
 
 ## 2. Telas e Páginas
 
-### 2.1 Home — Dashboard Público (`/`)
+### 2.1 Landing Page (`/`)
 
 Acessível sem login.
 
 **Seções:**
 - **Header** com botão "Entrar na Plataforma" → `/login`
-- **Hero** com dois botões: "Entrar / Cadastrar" e âncora "Ver Dashboard Público"
-- **Dashboard Público** com 3 métricas em tempo real:
-  - Total de Pesagens Registradas
-  - Total de Kg Validados
-  - Total de Selos Verdes Emitidos
+- **Hero** com dois botões: "Entrar / Cadastrar" → `/login` e "Dashboard Público" → `/dashboard`
+- **Métricas em tempo real** (3 cards): pesagens registradas, kg validados, selos emitidos
 - **Como Funciona** com 3 passos ilustrados
 - **CTA final** com botão de acesso à plataforma
 - **Footer** com créditos e rede
+
+> O dashboard completo (ranking, selos, QR Codes) vive em `/dashboard` — ver seção 2.10.
 
 ---
 
@@ -412,6 +411,68 @@ Acessível sem login. URL compartilhável e acessível por QR Code.
 
 ---
 
+### 2.10 Dashboard Público (`/dashboard`)
+
+Acessível sem login. Carrega todos os dados diretamente da blockchain (sem MetaMask).
+
+**Seções:**
+
+1. **Métricas Globais** (6 cards):
+   - Kg validados (`totalKgValidadoGlobal`)
+   - Pesagens registradas (`totalPesagens`)
+   - Pesagens validadas (soma das pesagens validadas por empresa)
+   - Selos emitidos (`GreenSeal.nextTokenId`)
+   - Cooperativas (`getListaCooperativas().length`)
+   - Empresas certificadas (`getEmpresas().length`)
+
+2. **Ranking de Empresas por Kg Certificado:**
+   - Tabela ordenada por kg decrescente
+   - Colunas: posição, empresa, materiais, kg certificados, selos, pesagens
+
+3. **Últimos Selos Verdes Emitidos** (até 5, mais recentes primeiro):
+   - Card por selo com: Token ID, empresa, kg certificados, material(is)
+   - QR Code (URL de verificação) embutido
+   - Botão "Ver auditoria completa" → `/verify/...`
+   - Link "Ver no Etherscan"
+
+4. **Contratos na Blockchain:**
+   - Cards do RecyclingLedger e GreenSeal com endereço e link Etherscan
+
+**Carregamento:** todas as chamadas RPC são sequenciais com `delay` para evitar rate limiting do Infura. Falha de RPC exibe banner de erro.
+
+---
+
+### 2.11 Verificação do Selo Verde (`/verify/[chainId]/[contractAddress]/[tokenId]`)
+
+Página pública de auditoria de um Selo Verde, aberta ao escanear o QR Code. Não requer login.
+
+**Validação de URL:**
+- `chainId` deve ser `11155111` (Sepolia)
+- `contractAddress` deve corresponder ao endereço do GreenSeal
+- URLs inválidas exibem mensagem de erro sem consultar a blockchain
+
+**Dados exibidos:**
+
+| Bloco | Conteúdo |
+|---|---|
+| Cabeçalho do selo | Token ID, status "✅ Válido", empresa, kg certificados, material(is), rede, contratos (com links Etherscan), transação de mint |
+| Cooperativas envolvidas | Endereços únicos das cooperativas das pesagens, com links Etherscan |
+| QR Code | URL pública de verificação do próprio selo |
+| On-chain vs Off-chain | Bloco explicativo sobre o que fica na blockchain vs IPFS |
+| Pesagens certificadas | Lista das pesagens validadas que compõem o selo |
+
+**Por pesagem certificada:**
+- ID, status "✅ CERTIFICADA", data
+- Material, peso em kg
+- Empresa, cooperativa (link Etherscan), auditor (link Etherscan)
+- CID IPFS e link para evidências
+- Hash da transação de registro (link Etherscan)
+- Hash da transação de validação (link Etherscan)
+
+**Busca de hashes de transação:** via `queryFilter` nos eventos `SeloEmitido`, `PesagemRegistrada` e `PesagemValidada` (janela de ~9000 blocos). Caso não encontre, exibe fallback com link genérico para o Etherscan.
+
+---
+
 ## 3. Componentes Reutilizáveis
 
 ### SealCard
@@ -437,16 +498,24 @@ faltam      = kgParaSelo - kgNoProximo
 
 ### QRDisplay
 
-**Props:** `empresaId`, `compact` (boolean, padrão `false`)
+**Props:**
+- `url` — URL completa a codificar (tem prioridade). Usada para a URL de verificação do selo.
+- `empresaId` — fallback: se `url` não for passada, gera `{NEXT_PUBLIC_APP_URL}/empresa/{empresaId}`
+- `compact` — boolean, padrão `false`
 
-**Modo compacto:** QR Code 100×100 sem botões (usado nos cards de selos da cooperativa)
+**Modo compacto:** QR Code 100×100 sem botões (usado nos cards de selos)
 
 **Modo normal:**
 - QR Code 180×180 em verde (`#16a34a`)
+- Exibe a URL codificada abaixo do QR
 - Botão **Copiar link** — copia URL para clipboard (fallback via `execCommand`)
 - Botão **Baixar QR** — converte SVG → Canvas → PNG e faz download
 
-**URL gerada:** `{NEXT_PUBLIC_APP_URL}/empresa/{empresaId}`
+**Hidratação:** o componente usa um guard `mounted` (via `useEffect`) e renderiza um skeleton no SSR. Isso evita erro de hydration mismatch causado por valores de `process.env` que podem divergir entre servidor e cliente.
+
+**URL codificada:**
+- Selos: `{NEXT_PUBLIC_APP_URL}/verify/{chainId}/{contractAddress}/{tokenId}` (via `getVerifyUrl()`)
+- Empresa (legado): `{NEXT_PUBLIC_APP_URL}/empresa/{empresaId}`
 
 ---
 
@@ -506,6 +575,10 @@ Recebe `{ objeto, nome }`, faz upload do JSON para Pinata e retorna o CID.
 | `getLedgerSigner(signer)` | Instância do RecyclingLedger para transações |
 | `getSealReadOnly()` | Instância do GreenSeal para leitura |
 | `getSealSigner(signer)` | Instância do GreenSeal para transações |
+| `getVerifyUrl(tokenId)` | Gera a URL pública de verificação: `{APP_URL}/verify/11155111/{SEAL_ADDRESS}/{tokenId}` |
+| `getEtherscanTx(txHash)` | Link da transação no Sepolia Etherscan |
+| `getEtherscanAddress(address)` | Link do endereço no Sepolia Etherscan |
+| `getEtherscanToken(tokenId)` | Link do token NFT no Sepolia Etherscan |
 | `conectarCarteira()` | Solicita acesso ao MetaMask, valida rede Sepolia, retorna `{signer, address}` |
 
 **Validação de rede em `conectarCarteira()`:**

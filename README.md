@@ -66,7 +66,9 @@ ADM          →  aprovarAuditor()        →  governa papéis e regras da plata
 
 | Rota | Descrição | Acesso |
 |---|---|---|
-| `/` | Dashboard público — métricas globais e como funciona | Público |
+| `/` | Landing page — hero, métricas e como funciona | Público |
+| `/dashboard` | Dashboard público — métricas, ranking, selos e QR Codes | Público |
+| `/verify/[chainId]/[contractAddress]/[tokenId]` | Verificação pública de um Selo Verde via QR Code | Público |
 | `/login` | Conecta MetaMask, detecta role e redireciona | Público |
 | `/cadastro/cooperativa` | Auto-registro de cooperativa na blockchain | Público |
 | `/cadastro/auditor` | Solicitação de acesso como auditor | Público |
@@ -95,7 +97,9 @@ greentrack/
 │   └── GreenSeal.test.js
 ├── frontend/
 │   ├── app/
-│   │   ├── page.jsx                        # Dashboard público
+│   │   ├── page.jsx                        # Landing page
+│   │   ├── dashboard/page.jsx              # Dashboard público
+│   │   ├── verify/[chainId]/[contractAddress]/[tokenId]/page.jsx  # Verificação do QR Code
 │   │   ├── login/page.jsx                  # Login com MetaMask
 │   │   ├── cadastro/
 │   │   │   ├── cooperativa/page.jsx        # Cadastro de cooperativa
@@ -108,7 +112,7 @@ greentrack/
 │   │   └── empresa/[id]/page.jsx           # Certificado público
 │   ├── components/
 │   │   ├── Providers.jsx        # Wrapper de contextos
-│   │   ├── QRDisplay.jsx        # QR Code do certificado
+│   │   ├── QRDisplay.jsx        # QR Code (URL de verificação)
 │   │   └── SealCard.jsx         # Card do Selo Verde
 │   ├── contexts/
 │   │   └── WalletContext.jsx    # Estado global da carteira e roles
