@@ -4,12 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getLedgerReadOnly, getSealReadOnly } from "../utils/contract";
 
-export default function Dashboard() {
-  const [metricas, setMetricas] = useState({
-    totalPesagens: 0,
-    totalKg: 0,
-    totalSelos: 0,
-  });
+export default function Home() {
+  const [metricas, setMetricas] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -17,19 +13,23 @@ export default function Dashboard() {
       try {
         const ledger = getLedgerReadOnly();
         const seal = getSealReadOnly();
-
-        const totalPesagens = Number(await ledger.totalPesagens());
-        const totalKg = Number(await ledger.totalKgValidadoGlobal());
-        const nextTokenId = Number(await seal.nextTokenId());
-
-        setMetricas({ totalPesagens, totalKg, totalSelos: nextTokenId });
-      } catch (e) {
-        console.error("Erro ao carregar métricas:", e);
+        const [totalPesagens, totalKg, nextTokenId] = await Promise.all([
+          ledger.totalPesagens(),
+          ledger.totalKgValidadoGlobal(),
+          seal.nextTokenId(),
+        ]);
+        setMetricas({
+          totalPesagens: Number(totalPesagens),
+          totalKg: Number(totalKg),
+          totalSelos: Number(nextTokenId),
+        });
+      } catch {
+        // exibe zeros se RPC falhar
+        setMetricas({ totalPesagens: 0, totalKg: 0, totalSelos: 0 });
       } finally {
         setLoading(false);
       }
     }
-
     carregarMetricas();
   }, []);
 
@@ -42,99 +42,82 @@ export default function Dashboard() {
             <span className="text-2xl">🌿</span>
             <span className="text-xl font-extrabold tracking-tight">GreenTrack</span>
           </div>
-          <nav className="flex gap-3">
-            <Link
-              href="/cooperativa"
-              className="bg-white text-green-700 hover:bg-green-50 text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
-            >
-              Cooperativa
-            </Link>
-            <Link
-              href="/auditor"
-              className="bg-green-600 hover:bg-green-500 border border-green-400 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
-            >
-              Auditor
-            </Link>
-          </nav>
+          <Link
+            href="/login"
+            className="bg-white text-green-700 hover:bg-green-50 text-sm font-semibold px-5 py-2 rounded-lg transition-colors"
+          >
+            Entrar na Plataforma →
+          </Link>
         </div>
       </header>
 
       {/* Hero */}
-      <section className="bg-gradient-to-b from-green-700 to-green-600 text-white py-16 px-6 text-center">
-        <h1 className="text-4xl font-extrabold mb-3">
+      <section className="bg-gradient-to-b from-green-700 to-green-600 text-white py-20 px-6 text-center">
+        <h1 className="text-4xl font-extrabold mb-4 max-w-2xl mx-auto leading-tight">
           Rastreabilidade de Reciclagem na Blockchain
         </h1>
-        <p className="text-green-100 text-lg max-w-xl mx-auto">
+        <p className="text-green-100 text-lg max-w-xl mx-auto mb-10">
           Registro imutável, validação auditada e certificação de impacto ambiental com NFTs.
         </p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Link
+            href="/login"
+            className="bg-white text-green-700 hover:bg-green-50 font-bold px-8 py-4 rounded-2xl text-base transition-colors shadow-lg"
+          >
+            🦊 Entrar / Cadastrar
+          </Link>
+          <a
+            href="#dashboard"
+            className="border-2 border-white text-white hover:bg-green-600 font-bold px-8 py-4 rounded-2xl text-base transition-colors"
+          >
+            📊 Ver Dashboard Público
+          </a>
+        </div>
       </section>
 
-      {/* Cards de métricas */}
-      <section className="max-w-5xl mx-auto px-6 py-12 w-full">
-        <h2 className="text-xl font-bold text-gray-700 mb-6 text-center">
-          Impacto Global da Plataforma
-        </h2>
+      {/* Dashboard Público */}
+      <section id="dashboard" className="max-w-5xl mx-auto px-6 py-14 w-full">
+        <h2 className="text-2xl font-bold text-gray-700 mb-2 text-center">Dashboard Público</h2>
+        <p className="text-gray-400 text-sm text-center mb-8">
+          Dados em tempo real da blockchain Ethereum Sepolia — sem necessidade de login.
+        </p>
         {loading ? (
-          <p className="text-center text-gray-400">Carregando dados da blockchain...</p>
+          <p className="text-center text-gray-400 py-8">Carregando dados da blockchain...</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <MetricCard
-              icon="📋"
-              value={metricas.totalPesagens}
-              label="Pesagens Registradas"
-              cor="text-blue-600"
-            />
-            <MetricCard
-              icon="♻️"
-              value={`${metricas.totalKg.toLocaleString()} kg`}
-              label="Total de Kg Validados"
-              cor="text-green-600"
-            />
-            <MetricCard
-              icon="🏅"
-              value={metricas.totalSelos}
-              label="Selos Verdes Emitidos"
-              cor="text-emerald-600"
-            />
+            <MetricCard icon="📋" value={metricas.totalPesagens} label="Pesagens Registradas" cor="text-blue-600" />
+            <MetricCard icon="♻️" value={`${metricas.totalKg.toLocaleString()} kg`} label="Total de Kg Validados" cor="text-green-600" />
+            <MetricCard icon="🏅" value={metricas.totalSelos} label="Selos Verdes Emitidos" cor="text-emerald-600" />
           </div>
         )}
       </section>
 
       {/* Como funciona */}
-      <section className="bg-white py-12 px-6">
+      <section className="bg-white py-14 px-6">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-xl font-bold text-gray-700 mb-8 text-center">Como Funciona</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <Passo
-              numero="1"
-              titulo="Registrar"
-              descricao="A cooperativa registra a pesagem com fotos como evidência. Dados vão para o IPFS e a blockchain."
-            />
-            <Passo
-              numero="2"
-              titulo="Validar"
-              descricao="Auditores verificam as evidências e validam ou rejeitam cada pesagem na cadeia."
-            />
-            <Passo
-              numero="3"
-              titulo="Certificar"
-              descricao="A cada 1.000 kg validados, um NFT Selo Verde é emitido automaticamente para a empresa."
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+            <Passo numero="1" titulo="Cooperativa Registra" descricao="A cooperativa cadastra-se e registra pesagens de materiais recicláveis com fotos como evidência." />
+            <Passo numero="2" titulo="Auditor Valida" descricao="Auditores aprovados verificam as evidências e validam cada pesagem na blockchain." />
+            <Passo numero="3" titulo="Selo Verde Emitido" descricao="A cada meta de kg validados, um NFT Selo Verde é emitido automaticamente para a empresa apoiadora." />
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="mt-auto bg-green-900 text-green-200 text-sm text-center py-4">
-        GreenTrack · Desafio 3 HackWeb ·{" "}
-        <a
-          href="https://github.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline hover:text-white"
+      {/* CTA final */}
+      <section className="bg-green-700 py-12 px-6 text-center text-white">
+        <h2 className="text-2xl font-bold mb-3">Faça parte da rede</h2>
+        <p className="text-green-100 mb-6 text-sm">Cooperativas e auditores podem se cadastrar gratuitamente.</p>
+        <Link
+          href="/login"
+          className="bg-white text-green-700 hover:bg-green-50 font-bold px-8 py-4 rounded-2xl text-sm transition-colors inline-block"
         >
-          GitHub
-        </a>
+          Acessar Plataforma →
+        </Link>
+      </section>
+
+      <footer className="bg-green-900 text-green-200 text-sm text-center py-4">
+        GreenTrack · Certificação ambiental na blockchain Ethereum Sepolia
       </footer>
     </div>
   );
@@ -153,9 +136,7 @@ function MetricCard({ icon, value, label, cor }) {
 function Passo({ numero, titulo, descricao }) {
   return (
     <div className="flex flex-col items-center text-center gap-3">
-      <div className="w-12 h-12 rounded-full bg-green-100 text-green-700 font-extrabold text-lg flex items-center justify-center">
-        {numero}
-      </div>
+      <div className="w-12 h-12 rounded-full bg-green-100 text-green-700 font-extrabold text-lg flex items-center justify-center">{numero}</div>
       <h3 className="font-bold text-gray-700">{titulo}</h3>
       <p className="text-gray-500 text-sm">{descricao}</p>
     </div>

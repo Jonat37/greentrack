@@ -14,23 +14,38 @@ A proposta é construir uma solução baseada em blockchain capaz de **registrar
 
 ## Objetivo
 
-O **GreenTrack** registra pesagens de materiais recicláveis realizadas por cooperativas, permite que auditores validem os dados on-chain e emite automaticamente **NFTs Selos Verdes** para empresas geradoras de resíduos a cada 1.000 kg reciclados validados.
+O **GreenTrack** registra pesagens de materiais recicláveis realizadas por cooperativas, permite que auditores aprovados validem os dados on-chain e emite automaticamente **NFTs Selos Verdes** (ERC-721) para empresas geradoras de resíduos a cada meta de kg reciclados validados.
 
 ```
-Cooperativa  →  registrarPesagem()  →  IPFS (fotos e metadados)
-Auditor      →  validarPesagem()    →  acumula kg on-chain
-Contrato     →  emitirSelo()        →  NFT ERC-721 automático
+Cooperativa  →  cadastrarCooperativa()  →  COOPERATIVA_ROLE automático
+Cooperativa  →  registrarPesagem()      →  IPFS (fotos + metadados) + blockchain
+Auditor      →  validarPesagem()        →  acumula kg on-chain por empresa
+Contrato     →  emitirSelo()            →  NFT ERC-721 automático ao atingir a meta
+ADM          →  aprovarAuditor()        →  governa papéis e regras da plataforma
 ```
 
 ---
 
-## Exemplos de aplicação
+## Funcionalidades
 
-- Certificação de reciclagem para empresas ESG
-- NFTs de impacto ambiental auditáveis
-- Dashboard público de métricas de reciclagem
-- Rastreabilidade de cadeia de resíduos sólidos
-- Registro verificável por QR Code
+- Cadastro de cooperativas com auto-permissão na blockchain
+- Solicitação de auditores com aprovação pelo administrador
+- Registro de pesagens com upload de evidências (fotos) no IPFS
+- Validação ou rejeição de pesagens por auditores aprovados
+- Emissão automática de NFT Selo Verde ao atingir meta de kg
+- Painel administrativo com governança de papéis e regras
+- Dashboard público com métricas em tempo real da blockchain
+- Certificado público por empresa com QR Code verificável
+- Controle de acesso por roles (ADM, Auditor, Cooperativa) via OpenZeppelin AccessControl
+
+---
+
+## Contratos na Ethereum Sepolia
+
+| Contrato | Endereço |
+|---|---|
+| RecyclingLedger | `0x602AE94DAbA2D99a0253c5e010a3d9dc77ACB616` |
+| GreenSeal (ERC-721) | `0x46769676B561D5981F2569A57a4de5ABA78fD011` |
 
 ---
 
@@ -39,42 +54,70 @@ Contrato     →  emitirSelo()        →  NFT ERC-721 automático
 | Camada | Tecnologia |
 |---|---|
 | Smart Contracts | Solidity ^0.8.24, Hardhat, OpenZeppelin v5 |
-| Rede | Polygon Amoy Testnet (chainId 80002) |
+| Rede | Ethereum Sepolia Testnet (chainId 11155111) |
 | Armazenamento | IPFS via Pinata |
-| Frontend | Next.js 14 (App Router), Tailwind CSS |
+| Frontend | Next.js 16 (App Router), Tailwind CSS v4 |
 | Web3 | Ethers.js v6, MetaMask |
 | Testes | Mocha + Chai + hardhat-chai-matchers |
 
 ---
 
-## Estrutura
+## Telas
+
+| Rota | Descrição | Acesso |
+|---|---|---|
+| `/` | Dashboard público — métricas globais e como funciona | Público |
+| `/login` | Conecta MetaMask, detecta role e redireciona | Público |
+| `/cadastro/cooperativa` | Auto-registro de cooperativa na blockchain | Público |
+| `/cadastro/auditor` | Solicitação de acesso como auditor | Público |
+| `/admin` | Governança — auditores, cooperativas, empresas, meta | ADM |
+| `/cooperativa` | Histórico de pesagens e selos emitidos | Cooperativa |
+| `/cooperativa/pesagem` | Formulário de nova pesagem com upload IPFS | Cooperativa |
+| `/auditor` | Pesagens pendentes para validar ou rejeitar | Auditor |
+| `/empresa/[id]` | Certificado de impacto público com QR Code | Público |
+
+---
+
+## Estrutura do projeto
 
 ```
 greentrack/
 ├── contracts/
-│   ├── RecyclingLedger.sol   # Registro e validação de pesagens
-│   ├── GreenSeal.sol         # NFT ERC-721 de Impacto Verde
-│   └── MockGreenSeal.sol     # Mock para testes
+│   ├── RecyclingLedger.sol     # Registro, validação, papéis e governança
+│   ├── GreenSeal.sol           # NFT ERC-721 Selo Verde
+│   └── MockGreenSeal.sol       # Mock para testes
 ├── scripts/
-│   ├── deploy.js             # Deploy dos contratos
-│   └── seed.js               # Dados de demonstração
+│   ├── deploy.js               # Deploy de ambos os contratos + copia ABIs
+│   ├── grant-role.js           # Concessão manual de papéis
+│   └── seed.js                 # Dados de demonstração
 ├── test/
 │   ├── RecyclingLedger.test.js
 │   └── GreenSeal.test.js
 ├── frontend/
 │   ├── app/
-│   │   ├── page.jsx              # Dashboard público
-│   │   ├── cooperativa/page.jsx  # Registro de pesagens
-│   │   ├── auditor/page.jsx      # Validação
-│   │   └── empresa/[id]/page.jsx # Certificado + QR Code
+│   │   ├── page.jsx                        # Dashboard público
+│   │   ├── login/page.jsx                  # Login com MetaMask
+│   │   ├── cadastro/
+│   │   │   ├── cooperativa/page.jsx        # Cadastro de cooperativa
+│   │   │   └── auditor/page.jsx            # Solicitação de auditor
+│   │   ├── admin/page.jsx                  # Painel administrativo
+│   │   ├── cooperativa/
+│   │   │   ├── page.jsx                    # Painel da cooperativa
+│   │   │   └── pesagem/page.jsx            # Nova pesagem
+│   │   ├── auditor/page.jsx                # Painel do auditor
+│   │   └── empresa/[id]/page.jsx           # Certificado público
 │   ├── components/
-│   │   ├── PesagemForm.jsx
-│   │   ├── AuditorPanel.jsx
-│   │   ├── SealCard.jsx
-│   │   └── QRDisplay.jsx
+│   │   ├── Providers.jsx        # Wrapper de contextos
+│   │   ├── QRDisplay.jsx        # QR Code do certificado
+│   │   └── SealCard.jsx         # Card do Selo Verde
+│   ├── contexts/
+│   │   └── WalletContext.jsx    # Estado global da carteira e roles
+│   ├── lib/
+│   │   ├── RecyclingLedgerABI.json
+│   │   └── GreenSealABI.json
 │   └── utils/
-│       ├── ipfs.js
-│       └── contract.js
+│       ├── contract.js          # Instâncias dos contratos
+│       └── ipfs.js              # Upload para IPFS via Pinata
 ├── hardhat.config.js
 ├── .env.example
 └── README.md
@@ -87,69 +130,73 @@ greentrack/
 ### Pré-requisitos
 
 - Node.js >= 18
-- MetaMask com MATIC na rede Amoy
-- Conta Pinata (para IPFS)
+- MetaMask instalado no navegador
+- Sepolia ETH de teste — obtenha em [sepoliafaucet.com](https://sepoliafaucet.com)
+- Conta [Infura](https://app.infura.io) (RPC URL Sepolia)
+- Conta [Pinata](https://pinata.cloud) (JWT para IPFS)
 
-### Instalar dependências
+### 1. Instalar dependências
 
 ```bash
-# Dependências do projeto Hardhat
+# Dependências do Hardhat (raiz)
 npm install
 
 # Dependências do frontend
 cd frontend && npm install && cd ..
 ```
 
-### Configurar variáveis de ambiente
+### 2. Configurar variáveis de ambiente
 
 ```bash
 cp .env.example .env
 ```
 
-Preencha o `.env`:
+Preencha o `.env` na raiz:
 
 ```env
-AMOY_RPC_URL=https://rpc-amoy.polygon.technology
-PRIVATE_KEY=sua_chave_privada
+SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/SEU_PROJECT_ID
+PRIVATE_KEY=sua_chave_privada_sem_0x
 PINATA_JWT=seu_jwt_pinata
-NEXT_PUBLIC_RPC_URL=https://rpc-amoy.polygon.technology
-NEXT_PUBLIC_CONTRACT_LEDGER=0x...
-NEXT_PUBLIC_CONTRACT_SEAL=0x...
+NEXT_PUBLIC_RPC_URL=https://sepolia.infura.io/v3/SEU_PROJECT_ID
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-### Compilar contratos
+### 3. Compilar os contratos
 
 ```bash
 npm run compile
 ```
 
-### Rodar testes
+### 4. Rodar testes
 
 ```bash
 npm test
 ```
 
-### Deploy local
+### 5. Deploy na Sepolia
 
 ```bash
-# Terminal 1 — node local
-npx hardhat node
-
-# Terminal 2 — deploy
-npm run deploy:local
-
-# Terminal 3 — dados de exemplo
-npx hardhat run scripts/seed.js --network localhost
+npm run deploy:sepolia
 ```
 
-### Deploy na Amoy Testnet
+O script realiza automaticamente:
+- Deploy do `GreenSeal`
+- Deploy do `RecyclingLedger` (passando o endereço do GreenSeal)
+- Autorização do Ledger no GreenSeal
+- Cópia dos ABIs para `frontend/lib/`
+- Salva endereços em `deployments.json`
 
-```bash
-npm run deploy:amoy
+Após o deploy, preencha o `frontend/.env.local`:
+
+```env
+NEXT_PUBLIC_RPC_URL=https://sepolia.infura.io/v3/SEU_PROJECT_ID
+NEXT_PUBLIC_CONTRACT_LEDGER=0x... (RecyclingLedger)
+NEXT_PUBLIC_CONTRACT_SEAL=0x...   (GreenSeal)
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+PINATA_JWT=seu_jwt_pinata
 ```
 
-### Iniciar frontend
+### 6. Iniciar o frontend
 
 ```bash
 cd frontend && npm run dev
@@ -159,13 +206,39 @@ Acesse `http://localhost:3000`
 
 ---
 
-## Requisitos mínimos atendidos
+## Papéis (Roles)
 
-- [x] Uso de blockchain (Polygon Amoy Testnet)
-- [x] Registro auditável (eventos on-chain + IPFS)
-- [x] Smart contract funcional (RecyclingLedger + GreenSeal ERC-721)
-- [x] Histórico verificável (mappings públicos + QR Code)
-- [x] README funcional
+| Role | Como obter | Permissões |
+|---|---|---|
+| `DEFAULT_ADMIN_ROLE` | Carteira que fez o deploy | Aprovar/rejeitar auditores, bloquear cooperativas, configurar meta de kg, cadastrar empresas apoiadoras |
+| `COOPERATIVA_ROLE` | Auto-cadastro em `/cadastro/cooperativa` | Registrar pesagens |
+| `AUDITOR_ROLE` | Solicitação aprovada pelo ADM | Validar e rejeitar pesagens |
+
+---
+
+## Fluxo completo de demonstração
+
+1. **ADM** acessa `/admin` e cadastra uma empresa apoiadora
+2. **Cooperativa** acessa `/cadastro/cooperativa`, conecta MetaMask e se registra
+3. **Auditor** acessa `/cadastro/auditor` e solicita acesso
+4. **ADM** aprova o auditor em `/admin`
+5. **Cooperativa** acessa `/cooperativa/pesagem` e registra uma pesagem com fotos
+6. **Auditor** acessa `/auditor` e valida a pesagem
+7. Ao atingir a meta de kg, o **Selo Verde NFT** é emitido automaticamente
+8. O certificado com QR Code fica disponível publicamente em `/empresa/[id]`
+
+---
+
+## Requisitos atendidos
+
+- [x] Blockchain pública (Ethereum Sepolia)
+- [x] Registro auditável com eventos on-chain e evidências IPFS
+- [x] Smart contracts funcionais (RecyclingLedger + GreenSeal ERC-721)
+- [x] Controle de acesso por roles (OpenZeppelin AccessControl)
+- [x] Governança administrativa (aprovação, bloqueio, configuração)
+- [x] Dashboard público sem necessidade de login
+- [x] Certificado verificável por QR Code
+- [x] Frontend completo integrado com MetaMask
 - [ ] Vídeo-pitch
 
 ---

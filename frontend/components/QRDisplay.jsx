@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { QRCodeSVG } from "qrcode.react";
 
-export default function QRDisplay({ empresaId }) {
+export default function QRDisplay({ empresaId, compact = false }) {
   const [copiado, setCopiado] = useState(false);
   const svgRef = useRef(null);
 
@@ -53,6 +53,14 @@ export default function QRDisplay({ empresaId }) {
       link.click();
     };
     img.src = url;
+  }
+
+  if (compact) {
+    return (
+      <div className="flex justify-center">
+        <QRCodeSVG value={empresaUrl} size={100} bgColor="#ffffff" fgColor="#16a34a" level="M" includeMargin />
+      </div>
+    );
   }
 
   return (

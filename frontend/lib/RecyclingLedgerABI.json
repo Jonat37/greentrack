@@ -36,6 +36,154 @@
     "inputs": [
       {
         "indexed": true,
+        "internalType": "address",
+        "name": "carteira",
+        "type": "address"
+      }
+    ],
+    "name": "AuditorAprovado",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "carteira",
+        "type": "address"
+      }
+    ],
+    "name": "AuditorBloqueado",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "carteira",
+        "type": "address"
+      }
+    ],
+    "name": "AuditorDesbloqueado",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "carteira",
+        "type": "address"
+      }
+    ],
+    "name": "AuditorRejeitado",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "carteira",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "nome",
+        "type": "string"
+      }
+    ],
+    "name": "AuditorSolicitado",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "carteira",
+        "type": "address"
+      }
+    ],
+    "name": "CooperativaBloqueada",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "carteira",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "nome",
+        "type": "string"
+      }
+    ],
+    "name": "CooperativaCadastrada",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "carteira",
+        "type": "address"
+      }
+    ],
+    "name": "CooperativaDesbloqueada",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "empresaId",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "nome",
+        "type": "string"
+      }
+    ],
+    "name": "EmpresaApoiadoraCadastrada",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "novoValor",
+        "type": "uint256"
+      }
+    ],
+    "name": "KgParaSeloAtualizado",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
         "internalType": "uint256",
         "name": "id",
         "type": "uint256"
@@ -233,13 +381,273 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "KG_PARA_SELO",
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "carteira",
+        "type": "address"
+      }
+    ],
+    "name": "aprovarAuditor",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "auditores",
     "outputs": [
       {
+        "internalType": "string",
+        "name": "nome",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "organizacao",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "tipoAuditor",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "cidade",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "estado",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "documento",
+        "type": "string"
+      },
+      {
+        "internalType": "address",
+        "name": "carteira",
+        "type": "address"
+      },
+      {
+        "internalType": "enum RecyclingLedger.StatusAuditor",
+        "name": "status",
+        "type": "uint8"
+      },
+      {
         "internalType": "uint256",
-        "name": "",
+        "name": "solicitadoEm",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "carteira",
+        "type": "address"
+      }
+    ],
+    "name": "bloquearAuditor",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "carteira",
+        "type": "address"
+      }
+    ],
+    "name": "bloquearCooperativa",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "nome",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "cnpj",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "cidade",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "estado",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "material",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "contato",
+        "type": "string"
+      }
+    ],
+    "name": "cadastrarCooperativa",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "empresaId",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "nome",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "cnpj",
+        "type": "string"
+      }
+    ],
+    "name": "cadastrarEmpresaApoiadora",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "cooperativas",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "nome",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "cnpj",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "cidade",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "estado",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "material",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "contato",
+        "type": "string"
+      },
+      {
+        "internalType": "address",
+        "name": "carteira",
+        "type": "address"
+      },
+      {
+        "internalType": "enum RecyclingLedger.StatusCooperativa",
+        "name": "status",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "cadastradoEm",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "carteira",
+        "type": "address"
+      }
+    ],
+    "name": "desbloquearAuditor",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "carteira",
+        "type": "address"
+      }
+    ],
+    "name": "desbloquearCooperativa",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "name": "empresasApoiadoras",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "nome",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "cnpj",
+        "type": "string"
+      },
+      {
+        "internalType": "bool",
+        "name": "ativa",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -253,6 +661,64 @@
         "internalType": "string[]",
         "name": "",
         "type": "string[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getListaAuditores",
+    "outputs": [
+      {
+        "internalType": "address[]",
+        "name": "",
+        "type": "address[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getListaCooperativas",
+    "outputs": [
+      {
+        "internalType": "address[]",
+        "name": "",
+        "type": "address[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getListaEmpresasApoiadoras",
+    "outputs": [
+      {
+        "internalType": "string[]",
+        "name": "",
+        "type": "string[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "carteira",
+        "type": "address"
+      }
+    ],
+    "name": "getPesagensPorCooperativa",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
       }
     ],
     "stateMutability": "view",
@@ -352,6 +818,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "kgParaSelo",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "string",
@@ -365,6 +844,63 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "listaAuditores",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "listaCooperativas",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "listaEmpresasApoiadoras",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
       }
     ],
     "stateMutability": "view",
@@ -424,6 +960,45 @@
         "internalType": "string",
         "name": "empresaId",
         "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "localColeta",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "dataColeta",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "observacao",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "pesagensPorCooperativa",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -474,9 +1049,37 @@
         "internalType": "string",
         "name": "empresaId",
         "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "localColeta",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "dataColeta",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "observacao",
+        "type": "string"
       }
     ],
     "name": "registrarPesagem",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "carteira",
+        "type": "address"
+      }
+    ],
+    "name": "rejeitarAuditor",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -531,6 +1134,57 @@
       }
     ],
     "name": "revokeRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "kg",
+        "type": "uint256"
+      }
+    ],
+    "name": "setKgParaSelo",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "nome",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "organizacao",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "tipoAuditor",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "cidade",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "estado",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "documento",
+        "type": "string"
+      }
+    ],
+    "name": "solicitarAuditor",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
