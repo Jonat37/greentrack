@@ -160,9 +160,154 @@ body {
   line-height: 1;
   padding: 13px 22px;
   border-radius: var(--radius-gt-md);
-  transition: filter 0.15s;
+  transition: filter 0.15s, transform 0.15s;
   display: inline-flex;
   align-items: center;
   gap: 8px;
 }
-.btn-on-canopy:hover { filter: brightness(0.96); }
+.btn-on-canopy:hover { filter: brightness(0.96); transform: translateY(-1px); }
+
+/* CTA buttons get a subtle lift on hover */
+.btn-forest:hover,
+.btn-pill-hero:hover { transform: translateY(-1px); }
+.btn-forest:active,
+.btn-pill-hero:active,
+.btn-on-canopy:active { transform: translateY(0); }
+
+/* ── Keyframes ───────────────────────────────────────────────────────────── */
+@keyframes gt-fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes gt-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes gt-scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes gt-slide-down {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes gt-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes gt-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+@keyframes gt-pulse-soft {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.5; }
+}
+@keyframes gt-grow-x {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+/* ── Animation utilities ─────────────────────────────────────────────────── */
+.gt-fade-up   { animation: gt-fade-up 0.55s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.gt-fade-in   { animation: gt-fade-in 0.5s ease both; }
+.gt-scale-in  { animation: gt-scale-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.gt-slide-down{ animation: gt-slide-down 0.3s ease both; }
+
+/* Stagger delays for lists/grids */
+.gt-stagger > * { animation: gt-fade-up 0.55s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.gt-stagger > *:nth-child(1) { animation-delay: 0.04s; }
+.gt-stagger > *:nth-child(2) { animation-delay: 0.10s; }
+.gt-stagger > *:nth-child(3) { animation-delay: 0.16s; }
+.gt-stagger > *:nth-child(4) { animation-delay: 0.22s; }
+.gt-stagger > *:nth-child(5) { animation-delay: 0.28s; }
+.gt-stagger > *:nth-child(6) { animation-delay: 0.34s; }
+.gt-stagger > *:nth-child(7) { animation-delay: 0.40s; }
+.gt-stagger > *:nth-child(8) { animation-delay: 0.46s; }
+
+/* Reveal on scroll (paired with JS IntersectionObserver via .gt-reveal/.gt-in) */
+.gt-reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1); }
+.gt-reveal.gt-in { opacity: 1; transform: translateY(0); }
+
+/* ── Interactive card — hover lift ───────────────────────────────────────── */
+.gt-card {
+  background: #ffffff;
+  border-radius: var(--radius-gt-lg);
+  border: 1px solid var(--color-gt-hairline);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  transition: transform 0.2s cubic-bezier(0.16,1,0.3,1), box-shadow 0.2s, border-color 0.2s;
+}
+.gt-card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(14,33,24,0.10);
+  border-color: var(--color-gt-leaf-soft);
+}
+
+/* Table row hover */
+.gt-row { transition: background-color 0.15s; }
+.gt-row:hover { background-color: var(--color-gt-canvas-soft); }
+
+/* ── Spinner ─────────────────────────────────────────────────────────────── */
+.gt-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--color-gt-hairline);
+  border-top-color: var(--color-gt-forest);
+  border-radius: 9999px;
+  animation: gt-spin 0.7s linear infinite;
+}
+
+/* ── Skeleton shimmer ────────────────────────────────────────────────────── */
+.gt-skeleton {
+  background: linear-gradient(90deg, #eef3ef 25%, #f6faf7 50%, #eef3ef 75%);
+  background-size: 800px 100%;
+  animation: gt-shimmer 1.4s linear infinite;
+  border-radius: var(--radius-gt-sm);
+}
+
+/* ── Form inputs (design-system) ─────────────────────────────────────────── */
+.gt-input,
+.gt-select,
+.gt-textarea {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid var(--color-gt-hairline);
+  border-radius: var(--radius-gt-sm);
+  padding: 10px 12px;
+  font-size: 1rem;
+  font-weight: 460;
+  color: var(--color-gt-ink);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.gt-input:focus,
+.gt-select:focus,
+.gt-textarea:focus {
+  outline: none;
+  border-color: var(--color-gt-forest);
+  box-shadow: 0 0 0 3px rgba(159,223,186,0.35);
+}
+.gt-input:disabled,
+.gt-select:disabled,
+.gt-textarea:disabled { background: var(--color-gt-canvas-soft); cursor: not-allowed; }
+
+.gt-label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-gt-ink-mute);
+  margin-bottom: 6px;
+}
+
+/* Link with persistent underline on light */
+.gt-link {
+  color: var(--color-gt-forest);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: opacity 0.15s;
+}
+.gt-link:hover { opacity: 0.7; }
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .gt-fade-up, .gt-fade-in, .gt-scale-in, .gt-slide-down,
+  .gt-stagger > *, .gt-reveal { animation: none !important; transition: none !important; opacity: 1 !important; transform: none !important; }
+}

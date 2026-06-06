@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getLedgerReadOnly, getSealReadOnly, getVerifyUrl, getEtherscanAddress } from "../../utils/contract";
 import QRDisplay from "../../components/QRDisplay";
+import { TopNav, AnimatedCounter, Reveal, Loader, Notice, SectionLabel, Badge } from "../../components/ui";
 
 const LEDGER_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_LEDGER;
 const SEAL_ADDRESS   = process.env.NEXT_PUBLIC_CONTRACT_SEAL;
@@ -87,137 +88,124 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
-      <header className="bg-green-700 text-white shadow-md">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80">
-            <span className="text-2xl">🌿</span>
-            <span className="text-xl font-extrabold tracking-tight">GreenTrack</span>
+    <div className="flex flex-col min-h-screen" style={{ background: "var(--color-gt-canvas-soft)" }}>
+      <TopNav
+        chip="Dashboard Público"
+        maxWidth={1120}
+        right={
+          <Link href="/login" className="gt-caption" style={{ color: "var(--color-gt-on-dark-mute)" }}>
+            Entrar →
           </Link>
-          <div className="flex items-center gap-4">
-            <span className="text-green-200 text-sm">Dashboard Público · Sepolia</span>
-            <Link href="/login" className="bg-white text-green-700 text-sm font-semibold px-4 py-2 rounded-lg hover:bg-green-50 transition-colors">
-              Entrar →
-            </Link>
-          </div>
-        </div>
-      </header>
+        }
+      />
 
-      <main className="flex-1 max-w-6xl mx-auto px-6 py-10 w-full">
-        <div className="mb-8">
-          <h1 className="text-3xl font-extrabold text-gray-800">Impacto Ambiental</h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Dados em tempo real da blockchain Ethereum Sepolia — verificáveis por qualquer pessoa, sem login.
+      <main style={{ flex: 1, maxWidth: 1120, margin: "0 auto", padding: "48px 24px", width: "100%" }}>
+        <Reveal style={{ marginBottom: 40 }}>
+          <SectionLabel>Ethereum Sepolia · Sem login</SectionLabel>
+          <h1 className="gt-display-xl" style={{ color: "var(--color-gt-ink)", marginBottom: 8 }}>
+            Impacto ambiental verificável
+          </h1>
+          <p className="gt-body-md" style={{ color: "var(--color-gt-ink-mute)", maxWidth: 560 }}>
+            Dados em tempo real da blockchain — auditáveis por qualquer pessoa, sem intermediário.
           </p>
-        </div>
+        </Reveal>
 
-        {erro && (
-          <div className="mb-6 bg-red-50 border border-red-300 text-red-700 rounded-xl px-4 py-3 text-sm">{erro}</div>
-        )}
+        {erro && <div style={{ marginBottom: 24 }}><Notice tone="error">{erro}</Notice></div>}
 
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-24 gap-4">
-            <div className="w-10 h-10 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
-            <p className="text-gray-400 text-sm">Consultando a blockchain...</p>
-          </div>
+          <Loader />
         ) : dados && (
           <>
             {/* ── Métricas ────────────────────────────────────────────────── */}
-            <section className="mb-12">
-              <h2 className="text-lg font-bold text-gray-700 mb-4">Métricas Globais</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                <MetricCard icon="♻️" value={`${dados.totalKgGlobal.toLocaleString()} kg`} label="Kg validados" cor="text-green-600" />
-                <MetricCard icon="📋" value={dados.totalPesagens} label="Pesagens registradas" cor="text-blue-600" />
-                <MetricCard icon="✅" value={dados.totalValidadas} label="Pesagens validadas" cor="text-green-700" />
-                <MetricCard icon="🏅" value={dados.totalSelos} label="Selos emitidos" cor="text-emerald-600" />
-                <MetricCard icon="🏭" value={dados.totalCooperativas} label="Cooperativas" cor="text-indigo-600" />
-                <MetricCard icon="🏢" value={dados.totalEmpresasCertificadas} label="Empresas certificadas" cor="text-purple-600" />
+            <section style={{ marginBottom: 56 }}>
+              <div className="gt-stagger" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+                <MetricCard value={dados.totalKgGlobal} unit="kg" label="Kg validados" />
+                <MetricCard value={dados.totalPesagens} label="Pesagens registradas" />
+                <MetricCard value={dados.totalValidadas} label="Pesagens validadas" />
+                <MetricCard value={dados.totalSelos} label="Selos emitidos" />
+                <MetricCard value={dados.totalCooperativas} label="Cooperativas" />
+                <MetricCard value={dados.totalEmpresasCertificadas} label="Empresas certificadas" />
               </div>
             </section>
 
             {/* ── Ranking ──────────────────────────────────────────────────── */}
             {dados.ranking.length > 0 && (
-              <section className="mb-12">
-                <h2 className="text-lg font-bold text-gray-700 mb-4">Ranking de Empresas por Kg Certificado</h2>
-                <div className="bg-white rounded-2xl shadow border border-gray-100 overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
-                      <tr>
-                        <th className="px-5 py-3 text-left w-10">#</th>
-                        <th className="px-5 py-3 text-left">Empresa</th>
-                        <th className="px-5 py-3 text-left">Materiais</th>
-                        <th className="px-5 py-3 text-right">Kg certificados</th>
-                        <th className="px-5 py-3 text-right">Selos</th>
-                        <th className="px-5 py-3 text-right">Pesagens</th>
+              <Reveal as="section" style={{ marginBottom: 56 }}>
+                <h2 className="gt-display-lg" style={{ color: "var(--color-gt-ink)", marginBottom: 20 }}>
+                  Ranking por kg certificado
+                </h2>
+                <div className="gt-card" style={{ overflow: "hidden" }}>
+                  <table style={{ width: "100%", fontSize: "0.875rem", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr style={{ background: "var(--color-gt-canvas-soft)", color: "var(--color-gt-ink-mute)", fontSize: "0.6875rem", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                        <th style={{ padding: "12px 20px", textAlign: "left", width: 40 }}>#</th>
+                        <th style={{ padding: "12px 20px", textAlign: "left" }}>Empresa</th>
+                        <th style={{ padding: "12px 20px", textAlign: "left" }}>Materiais</th>
+                        <th style={{ padding: "12px 20px", textAlign: "right" }}>Kg certificados</th>
+                        <th style={{ padding: "12px 20px", textAlign: "right" }}>Selos</th>
+                        <th style={{ padding: "12px 20px", textAlign: "right" }}>Pesagens</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
+                    <tbody>
                       {dados.ranking.map((e, i) => {
                         const selosEmpresa = dados.selos.filter((s) => s.empresaId === e.id).length;
                         return (
-                          <tr key={e.id} className="hover:bg-gray-50 transition-colors">
-                            <td className="px-5 py-3 font-bold text-gray-400">{i + 1}</td>
-                            <td className="px-5 py-3 font-mono text-xs text-gray-700 font-semibold">{e.id}</td>
-                            <td className="px-5 py-3 text-gray-500">{e.materials.join(", ") || "—"}</td>
-                            <td className="px-5 py-3 text-right font-bold text-green-700">{e.kg.toLocaleString()} kg</td>
-                            <td className="px-5 py-3 text-right text-emerald-600 font-semibold">{selosEmpresa > 0 ? `🏅 ${selosEmpresa}` : "—"}</td>
-                            <td className="px-5 py-3 text-right text-gray-500">{e.pesagens.length}</td>
+                          <tr key={e.id} className="gt-row" style={{ borderTop: "1px solid var(--color-gt-hairline)" }}>
+                            <td style={{ padding: "14px 20px", fontWeight: 700, color: "var(--color-gt-ink-faint)" }}>{i + 1}</td>
+                            <td style={{ padding: "14px 20px", fontFamily: "monospace", fontSize: "0.75rem", color: "var(--color-gt-ink)", fontWeight: 600 }}>{e.id}</td>
+                            <td style={{ padding: "14px 20px", color: "var(--color-gt-ink-mute)" }}>{e.materials.join(", ") || "—"}</td>
+                            <td style={{ padding: "14px 20px", textAlign: "right", fontWeight: 700, color: "var(--color-gt-forest)" }}>{e.kg.toLocaleString("pt-BR")} kg</td>
+                            <td style={{ padding: "14px 20px", textAlign: "right", color: "var(--color-gt-ink-mute)", fontWeight: 600 }}>{selosEmpresa > 0 ? selosEmpresa : "—"}</td>
+                            <td style={{ padding: "14px 20px", textAlign: "right", color: "var(--color-gt-ink-mute)" }}>{e.pesagens.length}</td>
                           </tr>
                         );
                       })}
                     </tbody>
                   </table>
                 </div>
-              </section>
+              </Reveal>
             )}
 
             {/* ── Selos ────────────────────────────────────────────────────── */}
-            <section className="mb-12">
-              <h2 className="text-lg font-bold text-gray-700 mb-4">
-                Últimos Selos Verdes Emitidos
+            <Reveal as="section" style={{ marginBottom: 56 }}>
+              <h2 className="gt-display-lg" style={{ color: "var(--color-gt-ink)", marginBottom: 20 }}>
+                Últimos Selos Verdes
                 {dados.totalSelos > 5 && (
-                  <span className="text-gray-400 text-sm font-normal ml-2">(exibindo últimos 5 de {dados.totalSelos})</span>
+                  <span className="gt-caption" style={{ color: "var(--color-gt-ink-faint)", fontWeight: 400, marginLeft: 8 }}>
+                    (últimos 5 de {dados.totalSelos})
+                  </span>
                 )}
               </h2>
 
               {dados.selos.length === 0 ? (
-                <div className="bg-gray-50 rounded-2xl p-10 text-center text-gray-400 text-sm">
-                  Nenhum Selo Verde emitido ainda. Selos são criados automaticamente quando uma empresa atinge a meta de kg validados.
+                <div className="gt-card" style={{ padding: 40, textAlign: "center" }}>
+                  <p className="gt-caption" style={{ color: "var(--color-gt-ink-faint)" }}>
+                    Nenhum Selo Verde emitido ainda. Selos são criados automaticamente quando uma empresa atinge a meta de kg validados.
+                  </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {dados.selos.map((s) => (
-                    <SeloCard key={s.tokenId} selo={s} />
-                  ))}
+                <div className="gt-stagger" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }}>
+                  {dados.selos.map((s) => <SeloCard key={s.tokenId} selo={s} />)}
                 </div>
               )}
-            </section>
+            </Reveal>
 
             {/* ── Links blockchain ─────────────────────────────────────────── */}
-            <section>
-              <h2 className="text-lg font-bold text-gray-700 mb-4">Contratos na Blockchain</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <ContractLink
-                  label="RecyclingLedger"
-                  desc="Registro e validação de pesagens"
-                  address={LEDGER_ADDRESS}
-                  href={getEtherscanAddress(LEDGER_ADDRESS)}
-                />
-                <ContractLink
-                  label="GreenSeal (ERC-721)"
-                  desc="NFTs Selos Verdes"
-                  address={SEAL_ADDRESS}
-                  href={getEtherscanAddress(SEAL_ADDRESS)}
-                />
+            <Reveal as="section">
+              <h2 className="gt-display-lg" style={{ color: "var(--color-gt-ink)", marginBottom: 20 }}>Contratos na blockchain</h2>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}>
+                <ContractLink label="RecyclingLedger" desc="Registro e validação de pesagens" address={LEDGER_ADDRESS} href={getEtherscanAddress(LEDGER_ADDRESS)} />
+                <ContractLink label="GreenSeal (ERC-721)" desc="NFTs Selos Verdes" address={SEAL_ADDRESS} href={getEtherscanAddress(SEAL_ADDRESS)} />
               </div>
-            </section>
+            </Reveal>
           </>
         )}
       </main>
 
-      <footer className="bg-green-900 text-green-200 text-sm text-center py-4 mt-10">
-        GreenTrack · Dados públicos e verificáveis na blockchain Ethereum Sepolia
+      <footer style={{ background: "var(--color-gt-canopy)", padding: "24px", textAlign: "center" }}>
+        <p className="gt-caption" style={{ color: "var(--color-gt-on-dark-mute)" }}>
+          GreenTrack · Dados públicos e verificáveis na blockchain Ethereum Sepolia
+        </p>
       </footer>
     </div>
   );
@@ -226,48 +214,39 @@ export default function DashboardPage() {
 function SeloCard({ selo }) {
   const verifyUrl = getVerifyUrl(selo.tokenId);
   return (
-    <div className="bg-white rounded-2xl shadow border border-green-100 p-5 flex flex-col gap-4">
-      <div className="flex items-start justify-between">
+    <div className="gt-card gt-card-hover" style={{ padding: 20, display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xl">🏅</span>
-            <span className="font-extrabold text-green-700 text-base">Selo Verde #{selo.tokenId}</span>
-          </div>
-          <p className="text-gray-500 text-xs font-mono">{selo.empresaId}</p>
+          <span className="gt-display-md" style={{ color: "var(--color-gt-forest)" }}>Selo Verde #{selo.tokenId}</span>
+          <p className="gt-micro" style={{ color: "var(--color-gt-ink-mute)", fontFamily: "monospace", marginTop: 2 }}>{selo.empresaId}</p>
         </div>
-        <span className="bg-green-50 text-green-700 text-xs font-bold px-2 py-1 rounded-full">Token #{selo.tokenId}</span>
+        <Badge tone="ok">#{selo.tokenId}</Badge>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 text-sm">
-        <div className="bg-gray-50 rounded-xl p-3 text-center">
-          <p className="text-xl font-extrabold text-green-700">{selo.totalKg.toLocaleString()}</p>
-          <p className="text-gray-500 text-xs">kg certificados</p>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        <div style={{ background: "var(--color-gt-canvas-soft)", borderRadius: "var(--radius-gt-md)", padding: 12, textAlign: "center" }}>
+          <p style={{ fontSize: "1.25rem", fontWeight: 560, color: "var(--color-gt-forest)" }}>{selo.totalKg.toLocaleString("pt-BR")}</p>
+          <p className="gt-micro" style={{ color: "var(--color-gt-ink-mute)" }}>kg certificados</p>
         </div>
-        <div className="bg-gray-50 rounded-xl p-3 text-center">
-          <p className="text-sm font-semibold text-gray-700 leading-tight">{selo.materials.join(", ") || "—"}</p>
-          <p className="text-gray-500 text-xs">material(is)</p>
+        <div style={{ background: "var(--color-gt-canvas-soft)", borderRadius: "var(--radius-gt-md)", padding: 12, textAlign: "center" }}>
+          <p className="gt-caption" style={{ fontWeight: 600, color: "var(--color-gt-ink)", lineHeight: 1.2 }}>{selo.materials.join(", ") || "—"}</p>
+          <p className="gt-micro" style={{ color: "var(--color-gt-ink-mute)" }}>material(is)</p>
         </div>
       </div>
 
-      {/* QR Code */}
-      <div className="flex flex-col items-center gap-2 py-2">
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "8px 0" }}>
         <QRDisplay url={verifyUrl} compact />
-        <p className="text-xs text-gray-400 text-center">Escaneie para auditar on-chain</p>
+        <p className="gt-micro" style={{ color: "var(--color-gt-ink-faint)" }}>Escaneie para auditar on-chain</p>
       </div>
 
-      {/* Ações */}
-      <div className="flex flex-col gap-2">
-        <Link
-          href={`/verify/11155111/${process.env.NEXT_PUBLIC_CONTRACT_SEAL}/${selo.tokenId}`}
-          className="w-full text-center bg-green-600 hover:bg-green-700 text-white text-sm font-semibold py-2 rounded-xl transition-colors"
-        >
-          🔍 Ver auditoria completa
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <Link href={`/verify/11155111/${process.env.NEXT_PUBLIC_CONTRACT_SEAL}/${selo.tokenId}`} className="btn-forest" style={{ width: "100%", justifyContent: "center", fontSize: "0.875rem", padding: "9px 16px" }}>
+          Ver auditoria completa
         </Link>
-        <a
-          href={`https://sepolia.etherscan.io/token/${process.env.NEXT_PUBLIC_CONTRACT_SEAL}?a=${selo.tokenId}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="w-full text-center border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs font-semibold py-2 rounded-xl transition-colors"
+        <a href={`https://sepolia.etherscan.io/token/${process.env.NEXT_PUBLIC_CONTRACT_SEAL}?a=${selo.tokenId}`} target="_blank" rel="noopener noreferrer"
+          style={{ width: "100%", textAlign: "center", border: "1px solid var(--color-gt-hairline)", color: "var(--color-gt-ink-mute)", fontSize: "0.75rem", fontWeight: 600, padding: "8px", borderRadius: "var(--radius-gt-md)", transition: "background 0.15s" }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = "var(--color-gt-canvas-soft)")}
+          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
         >
           Ver no Etherscan ↗
         </a>
@@ -276,31 +255,28 @@ function SeloCard({ selo }) {
   );
 }
 
-function MetricCard({ icon, value, label, cor }) {
+function MetricCard({ value, label, unit }) {
   return (
-    <div className="bg-white rounded-2xl shadow p-4 text-center border border-gray-100">
-      <p className="text-2xl mb-1">{icon}</p>
-      <p className={`text-2xl font-extrabold ${cor}`}>{value}</p>
-      <p className="text-gray-500 text-xs mt-1">{label}</p>
+    <div className="gt-card gt-card-hover" style={{ padding: 20, textAlign: "center" }}>
+      <p style={{ fontSize: "1.75rem", fontWeight: 560, color: "var(--color-gt-forest)", letterSpacing: "-0.02em", lineHeight: 1 }}>
+        <AnimatedCounter value={value} />
+        {unit && <span style={{ fontSize: "0.8125rem", fontWeight: 480, marginLeft: 3, color: "var(--color-gt-ink-mute)" }}>{unit}</span>}
+      </p>
+      <p className="gt-micro" style={{ color: "var(--color-gt-ink-mute)", marginTop: 6 }}>{label}</p>
     </div>
   );
 }
 
 function ContractLink({ label, desc, address, href }) {
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="bg-white rounded-2xl shadow border border-gray-100 p-5 hover:border-green-300 transition-colors block"
-    >
-      <div className="flex items-start justify-between">
+    <a href={href} target="_blank" rel="noopener noreferrer" className="gt-card gt-card-hover" style={{ padding: 20, display: "block" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
         <div>
-          <p className="font-bold text-gray-800 text-sm">{label}</p>
-          <p className="text-gray-500 text-xs mt-0.5">{desc}</p>
-          <p className="font-mono text-xs text-gray-400 mt-2 break-all">{address}</p>
+          <p className="gt-body-md" style={{ fontWeight: 600, color: "var(--color-gt-ink)" }}>{label}</p>
+          <p className="gt-caption" style={{ color: "var(--color-gt-ink-mute)", marginTop: 2 }}>{desc}</p>
+          <p className="gt-micro" style={{ fontFamily: "monospace", color: "var(--color-gt-ink-faint)", marginTop: 8, wordBreak: "break-all" }}>{address}</p>
         </div>
-        <span className="text-green-600 text-sm ml-2">↗</span>
+        <span style={{ color: "var(--color-gt-forest)", marginLeft: 8 }}>↗</span>
       </div>
     </a>
   );

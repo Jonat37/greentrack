@@ -69,7 +69,7 @@ export default function QRDisplay({ empresaId, url, compact = false }) {
           value={finalUrl}
           size={100}
           bgColor="#ffffff"
-          fgColor="#16a34a"
+          fgColor="#0e2118"
           level="M"
           includeMargin
         />
@@ -78,29 +78,28 @@ export default function QRDisplay({ empresaId, url, compact = false }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6 flex flex-col items-center gap-4 w-full max-w-xs">
+    <div className="gt-card" style={{ padding: 24, display: "flex", flexDirection: "column", alignItems: "center", gap: 16, width: "100%", maxWidth: 320 }}>
       <div ref={svgRef}>
         <QRCodeSVG
           value={finalUrl}
           size={180}
           bgColor="#ffffff"
-          fgColor="#16a34a"
+          fgColor="#0e2118"
           level="M"
           includeMargin
         />
       </div>
-      <p className="text-xs text-gray-400 text-center break-all">{finalUrl}</p>
-      <div className="flex gap-2 w-full">
+      <p className="gt-micro" style={{ color: "var(--color-gt-ink-faint)", textAlign: "center", wordBreak: "break-all" }}>{finalUrl}</p>
+      <div style={{ display: "flex", gap: 8, width: "100%" }}>
         <button
           onClick={copiarLink}
-          className="flex-1 border border-green-600 text-green-700 hover:bg-green-50 text-sm font-semibold py-2 rounded-lg transition-colors"
+          style={{ flex: 1, border: "1.5px solid var(--color-gt-forest)", color: "var(--color-gt-forest)", fontSize: "0.875rem", fontWeight: 700, padding: "9px", borderRadius: "var(--radius-gt-md)", transition: "background 0.15s" }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = "var(--color-gt-canvas-soft)")}
+          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
         >
           {copiado ? "Copiado!" : "Copiar link"}
         </button>
-        <button
-          onClick={baixarQR}
-          className="flex-1 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold py-2 rounded-lg transition-colors"
-        >
+        <button onClick={baixarQR} className="btn-forest" style={{ flex: 1, justifyContent: "center", fontSize: "0.875rem", padding: "9px" }}>
           Baixar QR
         </button>
       </div>

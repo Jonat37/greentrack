@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useWallet } from "../../../contexts/WalletContext";
 import { conectarCarteira, getLedgerSigner, getLedgerReadOnly } from "../../../utils/contract";
 import { uploadArquivoIPFS, criarMetadataPesagem } from "../../../utils/ipfs";
+import { TopNav, Loader, Notice } from "../../../components/ui";
 
 const MATERIAIS = ["PET", "Alumínio", "Papelão", "Vidro", "Eletrônicos", "Plástico Misto", "Outros"];
 
@@ -106,70 +107,52 @@ export default function NovaPesagem() {
     }
   }
 
-  if (!address) return <div className="min-h-screen flex items-center justify-center text-gray-400">Verificando permissões...</div>;
+  if (!address) return <div className="min-h-screen flex items-center justify-center"><Loader label="Verificando permissões..." /></div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="bg-green-700 text-white shadow-md">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80">
-            <span className="text-2xl">🌿</span>
-            <span className="text-xl font-extrabold tracking-tight">GreenTrack</span>
-          </Link>
-          <Link href="/cooperativa" className="text-green-200 text-sm hover:text-white">← Voltar ao painel</Link>
-        </div>
-      </header>
+    <div className="flex flex-col min-h-screen" style={{ background: "var(--color-gt-canvas-soft)" }}>
+      <TopNav
+        right={<Link href="/cooperativa" className="gt-caption" style={{ color: "var(--color-gt-on-dark-mute)" }}>← Voltar ao painel</Link>}
+      />
 
-      <main className="flex-1 max-w-2xl mx-auto px-4 py-10 w-full">
-        <h1 className="text-2xl font-extrabold text-gray-800 mb-1">Nova Pesagem</h1>
-        <p className="text-gray-500 text-sm mb-8">Registre uma coleta de material reciclável na blockchain.</p>
+      <main style={{ flex: 1, maxWidth: 680, margin: "0 auto", padding: "40px 16px", width: "100%" }}>
+        <div className="gt-fade-up" style={{ marginBottom: 32 }}>
+          <h1 className="gt-display-lg" style={{ color: "var(--color-gt-ink)", marginBottom: 4 }}>Nova Pesagem</h1>
+          <p className="gt-body-md" style={{ color: "var(--color-gt-ink-mute)" }}>Registre uma coleta de material reciclável na blockchain.</p>
+        </div>
 
         {status.tipo === "sucesso" ? (
-          <div className="bg-green-50 border border-green-300 rounded-2xl p-8 text-center">
-            <p className="text-4xl mb-3">✅</p>
-            <p className="text-green-800 font-semibold text-sm">{status.msg}</p>
-            <div className="flex gap-3 justify-center mt-6">
-              <button onClick={() => { setStatus({ tipo: "", msg: "" }); setForm({ empresaId: "", material: "", pesoKg: "", localColeta: "", dataColeta: "", observacao: "" }); setFotoBalanca(null); setFotoFardos(null); }} className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-xl text-sm">
+          <div className="gt-card gt-scale-in" style={{ padding: 40, textAlign: "center", border: "1px solid rgba(159,223,186,0.5)", background: "rgba(159,223,186,0.10)" }}>
+            <p className="gt-display-md" style={{ color: "var(--color-gt-forest)", marginBottom: 8 }}>Pesagem registrada</p>
+            <p className="gt-caption" style={{ color: "var(--color-gt-ink-mute)" }}>{status.msg}</p>
+            <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 24 }}>
+              <button onClick={() => { setStatus({ tipo: "", msg: "" }); setForm({ empresaId: "", material: "", pesoKg: "", localColeta: "", dataColeta: "", observacao: "" }); setFotoBalanca(null); setFotoFardos(null); }} className="btn-forest">
                 Nova pesagem
               </button>
-              <Link href="/cooperativa" className="border border-green-600 text-green-700 hover:bg-green-50 font-bold py-2 px-6 rounded-xl text-sm">
+              <Link href="/cooperativa" style={{ display: "inline-flex", alignItems: "center", border: "1.5px solid var(--color-gt-forest)", color: "var(--color-gt-forest)", fontWeight: 700, padding: "12px 20px", borderRadius: "var(--radius-gt-md)", fontSize: "0.875rem" }}>
                 Ver histórico
               </Link>
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-lg p-8 flex flex-col gap-5">
+          <form onSubmit={handleSubmit} className="gt-card gt-fade-up" style={{ padding: 32, display: "flex", flexDirection: "column", gap: 20 }}>
             {/* Empresa apoiadora */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Empresa apoiadora *</label>
+              <label className="gt-label">Empresa apoiadora *</label>
               {empresas.length > 0 ? (
-                <select
-                  value={form.empresaId}
-                  onChange={(e) => set("empresaId", e.target.value)}
-                  disabled={loading}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                >
+                <select value={form.empresaId} onChange={(e) => set("empresaId", e.target.value)} disabled={loading} className="gt-select">
                   <option value="">Selecione a empresa</option>
-                  {empresas.map((e) => (
-                    <option key={e.id} value={e.id}>{e.nome} ({e.id})</option>
-                  ))}
+                  {empresas.map((e) => <option key={e.id} value={e.id}>{e.nome} ({e.id})</option>)}
                 </select>
               ) : (
-                <input
-                  type="text"
-                  value={form.empresaId}
-                  onChange={(e) => set("empresaId", e.target.value)}
-                  placeholder="CNPJ ou código da empresa"
-                  disabled={loading}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
+                <input type="text" value={form.empresaId} onChange={(e) => set("empresaId", e.target.value)} placeholder="CNPJ ou código da empresa" disabled={loading} className="gt-input" />
               )}
             </div>
 
             {/* Material */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de material *</label>
-              <select value={form.material} onChange={(e) => set("material", e.target.value)} disabled={loading} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+              <label className="gt-label">Tipo de material *</label>
+              <select value={form.material} onChange={(e) => set("material", e.target.value)} disabled={loading} className="gt-select">
                 <option value="">Selecione o material</option>
                 {MATERIAIS.map((m) => <option key={m}>{m}</option>)}
               </select>
@@ -177,44 +160,44 @@ export default function NovaPesagem() {
 
             {/* Peso */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Peso (kg) *</label>
-              <input type="number" min="1" value={form.pesoKg} onChange={(e) => set("pesoKg", e.target.value)} placeholder="Ex: 350" disabled={loading} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
+              <label className="gt-label">Peso (kg) *</label>
+              <input type="number" min="1" value={form.pesoKg} onChange={(e) => set("pesoKg", e.target.value)} placeholder="Ex: 350" disabled={loading} className="gt-input" />
             </div>
 
             {/* Local e Data */}
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Local da coleta</label>
-                <input type="text" value={form.localColeta} onChange={(e) => set("localColeta", e.target.value)} placeholder="Ex: Galpão Central SP" disabled={loading} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
+            <div style={{ display: "flex", gap: 12 }}>
+              <div style={{ flex: 1 }}>
+                <label className="gt-label">Local da coleta</label>
+                <input type="text" value={form.localColeta} onChange={(e) => set("localColeta", e.target.value)} placeholder="Ex: Galpão Central SP" disabled={loading} className="gt-input" />
               </div>
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Data da pesagem</label>
-                <input type="date" value={form.dataColeta} onChange={(e) => set("dataColeta", e.target.value)} disabled={loading} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
+              <div style={{ flex: 1 }}>
+                <label className="gt-label">Data da pesagem</label>
+                <input type="date" value={form.dataColeta} onChange={(e) => set("dataColeta", e.target.value)} disabled={loading} className="gt-input" />
               </div>
             </div>
 
             {/* Fotos */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Foto do tíquete da balança *</label>
-              <input type="file" accept="image/*" onChange={(e) => setFotoBalanca(e.target.files[0] || null)} disabled={loading} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:bg-green-50 file:text-green-700 hover:file:bg-green-100" />
-              {fotoBalanca && <p className="text-xs text-gray-500 mt-1">📎 {fotoBalanca.name}</p>}
+              <label className="gt-label">Foto do tíquete da balança *</label>
+              <input type="file" accept="image/*" onChange={(e) => setFotoBalanca(e.target.files[0] || null)} disabled={loading} className="gt-input" style={{ padding: "8px 12px", fontSize: "0.875rem" }} />
+              {fotoBalanca && <p className="gt-micro" style={{ color: "var(--color-gt-ink-mute)", marginTop: 4 }}>{fotoBalanca.name}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Foto dos fardos / material *</label>
-              <input type="file" accept="image/*" onChange={(e) => setFotoFardos(e.target.files[0] || null)} disabled={loading} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-600 file:mr-3 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:bg-green-50 file:text-green-700 hover:file:bg-green-100" />
-              {fotoFardos && <p className="text-xs text-gray-500 mt-1">📎 {fotoFardos.name}</p>}
+              <label className="gt-label">Foto dos fardos / material *</label>
+              <input type="file" accept="image/*" onChange={(e) => setFotoFardos(e.target.files[0] || null)} disabled={loading} className="gt-input" style={{ padding: "8px 12px", fontSize: "0.875rem" }} />
+              {fotoFardos && <p className="gt-micro" style={{ color: "var(--color-gt-ink-mute)", marginTop: 4 }}>{fotoFardos.name}</p>}
             </div>
 
             {/* Observação */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Observação</label>
-              <textarea value={form.observacao} onChange={(e) => set("observacao", e.target.value)} placeholder="Informações adicionais sobre a coleta..." disabled={loading} rows={3} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none" />
+              <label className="gt-label">Observação</label>
+              <textarea value={form.observacao} onChange={(e) => set("observacao", e.target.value)} placeholder="Informações adicionais sobre a coleta..." disabled={loading} rows={3} className="gt-textarea" style={{ resize: "none" }} />
             </div>
 
-            {status.tipo === "erro" && <div className="bg-red-50 border border-red-300 text-red-700 rounded-xl px-4 py-3 text-sm">{status.msg}</div>}
-            {status.tipo === "loading" && <div className="bg-yellow-50 border border-yellow-300 text-yellow-800 rounded-xl px-4 py-3 text-sm animate-pulse">{status.msg}</div>}
+            {status.tipo === "erro" && <Notice tone="error">{status.msg}</Notice>}
+            {status.tipo === "loading" && <Notice tone="loading">{status.msg}</Notice>}
 
-            <button type="submit" disabled={loading} className="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white font-bold py-3 rounded-xl transition-colors">
+            <button type="submit" disabled={loading} className="btn-forest" style={{ width: "100%", justifyContent: "center", opacity: loading ? 0.6 : 1 }}>
               {loading ? "Processando..." : "Registrar Pesagem na Blockchain"}
             </button>
           </form>

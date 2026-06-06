@@ -16,11 +16,12 @@ async function carregarSequencial(lista, fn, intervalo = 120) {
   return results;
 }
 import { getLedgerReadOnly, getLedgerSigner, getSealReadOnly, conectarCarteira } from "../../utils/contract";
+import { TopNav, AnimatedCounter, Reveal, Loader, Notice, Badge } from "../../components/ui";
 
 const STATUS_AUDITOR = ["PENDENTE", "APROVADO", "REJEITADO", "BLOQUEADO"];
 const STATUS_COOP = ["ATIVA", "BLOQUEADA"];
-const BADGE_AUDITOR = ["bg-yellow-100 text-yellow-700", "bg-green-100 text-green-700", "bg-red-100 text-red-700", "bg-gray-200 text-gray-600"];
-const BADGE_COOP = ["bg-green-100 text-green-700", "bg-red-100 text-red-700"];
+const TONE_AUDITOR = ["pending", "ok", "error", "neutral"];
+const TONE_COOP = ["ok", "error"];
 
 export default function AdminPage() {
   const { address, roles, loaded } = useWallet();
@@ -134,97 +135,92 @@ export default function AdminPage() {
   }
 
   if (!address || (!roles.isAdmin && address)) {
-    return <div className="min-h-screen flex items-center justify-center text-gray-400">Verificando permissões...</div>;
+    return <div className="min-h-screen flex items-center justify-center"><Loader label="Verificando permissões..." /></div>;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="bg-purple-700 text-white shadow-md">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80">
-            <span className="text-2xl">🌿</span>
-            <span className="text-xl font-extrabold tracking-tight">GreenTrack</span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <span className="bg-purple-600 text-purple-100 text-xs font-bold px-3 py-1 rounded-full">ADM</span>
-            <span className="text-purple-200 text-xs font-mono">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
-          </div>
-        </div>
-      </header>
+    <div className="flex flex-col min-h-screen" style={{ background: "var(--color-gt-canvas-soft)" }}>
+      <TopNav chip="Administrador" address={address} maxWidth={1120} />
 
-      <main className="flex-1 max-w-6xl mx-auto px-6 py-10 w-full">
-        <h1 className="text-2xl font-extrabold text-gray-800 mb-8">Painel Administrativo</h1>
+      <main style={{ flex: 1, maxWidth: 1120, margin: "0 auto", padding: "40px 24px", width: "100%" }}>
+        <Reveal>
+          <h1 className="gt-display-lg" style={{ color: "var(--color-gt-ink)", marginBottom: 32 }}>Painel Administrativo</h1>
+        </Reveal>
 
-        {erro && (
-          <div className="mb-6 bg-red-50 border border-red-300 text-red-700 rounded-xl px-4 py-3 text-sm flex justify-between">
-            {erro}
-            <button onClick={() => setErro("")} className="font-bold">×</button>
-          </div>
-        )}
+        {erro && <div style={{ marginBottom: 24 }}><Notice tone="error" onClose={() => setErro("")}>{erro}</Notice></div>}
 
         {loading ? (
-          <p className="text-gray-400 text-center py-16">Carregando dados da blockchain...</p>
+          <Loader />
         ) : (
           <>
             {/* Métricas */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+            <div className="gt-stagger" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 14, marginBottom: 32 }}>
               {[
-                { label: "Cooperativas", value: metricas.totalCoops, cor: "text-green-600" },
-                { label: "Auditores aprovados", value: metricas.auditoresAprovados, cor: "text-blue-600" },
-                { label: "Auditores pendentes", value: metricas.auditoresPendentes, cor: "text-yellow-600" },
-                { label: "Pesagens registradas", value: metricas.totalPesagens, cor: "text-gray-700" },
-                { label: "Kg validados", value: metricas.totalKg.toLocaleString() + " kg", cor: "text-green-700" },
-                { label: "Selos emitidos", value: metricas.totalSelos, cor: "text-emerald-600" },
-                { label: "Meta atual (kg/selo)", value: metricas.kgParaSelo.toLocaleString(), cor: "text-purple-600" },
+                { label: "Cooperativas", value: metricas.totalCoops },
+                { label: "Auditores aprovados", value: metricas.auditoresAprovados },
+                { label: "Auditores pendentes", value: metricas.auditoresPendentes },
+                { label: "Pesagens registradas", value: metricas.totalPesagens },
+                { label: "Kg validados", value: metricas.totalKg, unit: "kg", accent: true },
+                { label: "Selos emitidos", value: metricas.totalSelos },
+                { label: "Meta atual (kg/selo)", value: metricas.kgParaSelo, accent: true },
               ].map((m) => (
-                <div key={m.label} className="bg-white rounded-2xl shadow p-4 text-center border border-gray-100">
-                  <p className={`text-2xl font-extrabold ${m.cor}`}>{m.value}</p>
-                  <p className="text-gray-500 text-xs mt-1">{m.label}</p>
+                <div key={m.label} className="gt-card gt-card-hover" style={{ padding: 18, textAlign: "center" }}>
+                  <p style={{ fontSize: "1.5rem", fontWeight: 560, letterSpacing: "-0.02em", lineHeight: 1, color: m.accent ? "var(--color-gt-forest)" : "var(--color-gt-ink)" }}>
+                    <AnimatedCounter value={m.value} />
+                    {m.unit && <span style={{ fontSize: "0.75rem", fontWeight: 480, marginLeft: 3, color: "var(--color-gt-ink-mute)" }}>{m.unit}</span>}
+                  </p>
+                  <p className="gt-micro" style={{ color: "var(--color-gt-ink-mute)", marginTop: 6 }}>{m.label}</p>
                 </div>
               ))}
             </div>
 
             {/* Abas */}
-            <div className="flex gap-2 mb-6 border-b border-gray-200">
+            <div style={{ display: "flex", gap: 8, marginBottom: 24, borderBottom: "1px solid var(--color-gt-hairline)", flexWrap: "wrap" }}>
               {[
                 { key: "auditores", label: `Auditores (${auditores.length})` },
                 { key: "cooperativas", label: `Cooperativas (${cooperativas.length})` },
                 { key: "empresas", label: `Empresas (${empresas.length})` },
                 { key: "config", label: "Configurações" },
-              ].map((a) => (
-                <button
-                  key={a.key}
-                  onClick={() => setAba(a.key)}
-                  className={`px-4 py-2 text-sm font-semibold rounded-t-lg transition-colors ${aba === a.key ? "bg-white border border-b-white border-gray-200 text-purple-700 -mb-px" : "text-gray-500 hover:text-gray-700"}`}
-                >
-                  {a.label}
-                </button>
-              ))}
+              ].map((a) => {
+                const active = aba === a.key;
+                return (
+                  <button key={a.key} onClick={() => setAba(a.key)}
+                    style={{
+                      padding: "10px 16px", fontSize: "0.875rem", fontWeight: 600,
+                      color: active ? "var(--color-gt-forest)" : "var(--color-gt-ink-mute)",
+                      borderBottom: active ? "2px solid var(--color-gt-forest)" : "2px solid transparent",
+                      marginBottom: -1, transition: "color 0.15s",
+                    }}
+                  >
+                    {a.label}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Aba Auditores */}
             {aba === "auditores" && (
-              <div className="flex flex-col gap-3">
-                {auditores.length === 0 && <p className="text-gray-400 text-sm py-8 text-center">Nenhum auditor solicitado ainda.</p>}
+              <div className="gt-stagger" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {auditores.length === 0 && <p className="gt-caption" style={{ color: "var(--color-gt-ink-faint)", padding: "32px 0", textAlign: "center" }}>Nenhum auditor solicitado ainda.</p>}
                 {auditores.map((a) => (
-                  <div key={a.carteira} className="bg-white rounded-xl shadow p-5 border border-gray-100 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+                  <div key={a.carteira} className="gt-card" style={{ padding: 20, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 16, justifyContent: "space-between" }}>
                     <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-bold text-gray-800">{a.nome}</span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${BADGE_AUDITOR[a.status]}`}>{STATUS_AUDITOR[a.status]}</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                        <span className="gt-body-md" style={{ fontWeight: 600, color: "var(--color-gt-ink)" }}>{a.nome}</span>
+                        <Badge tone={TONE_AUDITOR[a.status]}>{STATUS_AUDITOR[a.status]}</Badge>
                       </div>
-                      <p className="text-gray-500 text-xs">{a.tipoAuditor} · {a.organizacao} · {a.cidade}/{a.estado}</p>
-                      <p className="text-gray-400 text-xs font-mono mt-1">{a.carteira.slice(0, 10)}...{a.carteira.slice(-6)}</p>
+                      <p className="gt-micro" style={{ color: "var(--color-gt-ink-mute)" }}>{a.tipoAuditor} · {a.organizacao} · {a.cidade}/{a.estado}</p>
+                      <p className="gt-micro" style={{ color: "var(--color-gt-ink-faint)", fontFamily: "monospace", marginTop: 4 }}>{a.carteira.slice(0, 10)}...{a.carteira.slice(-6)}</p>
                     </div>
-                    <div className="flex gap-2 flex-wrap">
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                       {a.status === 0 && (
                         <>
-                          <BtnAcao label="Aprovar" cor="green" loading={txLoading} id={a.carteira + "ap"} onClick={() => acao((l) => l.aprovarAuditor(a.carteira), a.carteira + "ap")} />
-                          <BtnAcao label="Rejeitar" cor="red" loading={txLoading} id={a.carteira + "rej"} onClick={() => acao((l) => l.rejeitarAuditor(a.carteira), a.carteira + "rej")} />
+                          <BtnAcao label="Aprovar" tone="ok" loading={txLoading} id={a.carteira + "ap"} onClick={() => acao((l) => l.aprovarAuditor(a.carteira), a.carteira + "ap")} />
+                          <BtnAcao label="Rejeitar" tone="danger" loading={txLoading} id={a.carteira + "rej"} onClick={() => acao((l) => l.rejeitarAuditor(a.carteira), a.carteira + "rej")} />
                         </>
                       )}
-                      {a.status === 1 && <BtnAcao label="Bloquear" cor="gray" loading={txLoading} id={a.carteira + "bl"} onClick={() => acao((l) => l.bloquearAuditor(a.carteira), a.carteira + "bl")} />}
-                      {a.status === 3 && <BtnAcao label="Desbloquear" cor="blue" loading={txLoading} id={a.carteira + "des"} onClick={() => acao((l) => l.desbloquearAuditor(a.carteira), a.carteira + "des")} />}
+                      {a.status === 1 && <BtnAcao label="Bloquear" tone="danger" loading={txLoading} id={a.carteira + "bl"} onClick={() => acao((l) => l.bloquearAuditor(a.carteira), a.carteira + "bl")} />}
+                      {a.status === 3 && <BtnAcao label="Desbloquear" tone="ok" loading={txLoading} id={a.carteira + "des"} onClick={() => acao((l) => l.desbloquearAuditor(a.carteira), a.carteira + "des")} />}
                     </div>
                   </div>
                 ))}
@@ -233,22 +229,22 @@ export default function AdminPage() {
 
             {/* Aba Cooperativas */}
             {aba === "cooperativas" && (
-              <div className="flex flex-col gap-3">
-                {cooperativas.length === 0 && <p className="text-gray-400 text-sm py-8 text-center">Nenhuma cooperativa cadastrada ainda.</p>}
+              <div className="gt-stagger" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {cooperativas.length === 0 && <p className="gt-caption" style={{ color: "var(--color-gt-ink-faint)", padding: "32px 0", textAlign: "center" }}>Nenhuma cooperativa cadastrada ainda.</p>}
                 {cooperativas.map((c) => (
-                  <div key={c.carteira} className="bg-white rounded-xl shadow p-5 border border-gray-100 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+                  <div key={c.carteira} className="gt-card" style={{ padding: 20, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 16, justifyContent: "space-between" }}>
                     <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-bold text-gray-800">{c.nome}</span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${BADGE_COOP[c.status]}`}>{STATUS_COOP[c.status]}</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                        <span className="gt-body-md" style={{ fontWeight: 600, color: "var(--color-gt-ink)" }}>{c.nome}</span>
+                        <Badge tone={TONE_COOP[c.status]}>{STATUS_COOP[c.status]}</Badge>
                       </div>
-                      <p className="text-gray-500 text-xs">CNPJ: {c.cnpj} · {c.material} · {c.cidade}/{c.estado}</p>
-                      <p className="text-gray-400 text-xs font-mono mt-1">{c.carteira.slice(0, 10)}...{c.carteira.slice(-6)}</p>
+                      <p className="gt-micro" style={{ color: "var(--color-gt-ink-mute)" }}>CNPJ: {c.cnpj} · {c.material} · {c.cidade}/{c.estado}</p>
+                      <p className="gt-micro" style={{ color: "var(--color-gt-ink-faint)", fontFamily: "monospace", marginTop: 4 }}>{c.carteira.slice(0, 10)}...{c.carteira.slice(-6)}</p>
                     </div>
-                    <div className="flex gap-2">
+                    <div style={{ display: "flex", gap: 8 }}>
                       {c.status === 0
-                        ? <BtnAcao label="Bloquear" cor="red" loading={txLoading} id={c.carteira + "bl"} onClick={() => acao((l) => l.bloquearCooperativa(c.carteira), c.carteira + "bl")} />
-                        : <BtnAcao label="Desbloquear" cor="green" loading={txLoading} id={c.carteira + "des"} onClick={() => acao((l) => l.desbloquearCooperativa(c.carteira), c.carteira + "des")} />
+                        ? <BtnAcao label="Bloquear" tone="danger" loading={txLoading} id={c.carteira + "bl"} onClick={() => acao((l) => l.bloquearCooperativa(c.carteira), c.carteira + "bl")} />
+                        : <BtnAcao label="Desbloquear" tone="ok" loading={txLoading} id={c.carteira + "des"} onClick={() => acao((l) => l.desbloquearCooperativa(c.carteira), c.carteira + "des")} />
                       }
                     </div>
                   </div>
@@ -258,33 +254,33 @@ export default function AdminPage() {
 
             {/* Aba Empresas */}
             {aba === "empresas" && (
-              <div className="flex flex-col gap-6">
-                <form onSubmit={cadastrarEmpresa} className="bg-white rounded-xl shadow p-5 border border-gray-100 flex flex-col sm:flex-row gap-3 items-end">
-                  <div className="flex-1">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">ID da empresa (CNPJ ou código) *</label>
-                    <input value={empresaForm.id} onChange={(e) => setEmpresaForm((f) => ({ ...f, id: e.target.value }))} placeholder="00.000.000/0001-00" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+              <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+                <form onSubmit={cadastrarEmpresa} className="gt-card" style={{ padding: 20, display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-end" }}>
+                  <div style={{ flex: 1, minWidth: 180 }}>
+                    <label className="gt-label">ID da empresa (CNPJ ou código) *</label>
+                    <input value={empresaForm.id} onChange={(e) => setEmpresaForm((f) => ({ ...f, id: e.target.value }))} placeholder="00.000.000/0001-00" className="gt-input" />
                   </div>
-                  <div className="flex-1">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Nome *</label>
-                    <input value={empresaForm.nome} onChange={(e) => setEmpresaForm((f) => ({ ...f, nome: e.target.value }))} placeholder="Empresa Apoiadora Ltda" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                  <div style={{ flex: 1, minWidth: 180 }}>
+                    <label className="gt-label">Nome *</label>
+                    <input value={empresaForm.nome} onChange={(e) => setEmpresaForm((f) => ({ ...f, nome: e.target.value }))} placeholder="Empresa Apoiadora Ltda" className="gt-input" />
                   </div>
-                  <div className="flex-1">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">CNPJ</label>
-                    <input value={empresaForm.cnpj} onChange={(e) => setEmpresaForm((f) => ({ ...f, cnpj: e.target.value }))} placeholder="Opcional" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                  <div style={{ flex: 1, minWidth: 140 }}>
+                    <label className="gt-label">CNPJ</label>
+                    <input value={empresaForm.cnpj} onChange={(e) => setEmpresaForm((f) => ({ ...f, cnpj: e.target.value }))} placeholder="Opcional" className="gt-input" />
                   </div>
-                  <button type="submit" disabled={txLoading === "empresa"} className="bg-purple-600 hover:bg-purple-700 disabled:bg-purple-300 text-white font-semibold px-5 py-2 rounded-lg text-sm whitespace-nowrap">
+                  <button type="submit" disabled={txLoading === "empresa"} className="btn-forest" style={{ whiteSpace: "nowrap", opacity: txLoading === "empresa" ? 0.6 : 1 }}>
                     {txLoading === "empresa" ? "..." : "+ Cadastrar"}
                   </button>
                 </form>
-                <div className="flex flex-col gap-2">
-                  {empresas.length === 0 && <p className="text-gray-400 text-sm py-4 text-center">Nenhuma empresa cadastrada.</p>}
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {empresas.length === 0 && <p className="gt-caption" style={{ color: "var(--color-gt-ink-faint)", padding: "16px 0", textAlign: "center" }}>Nenhuma empresa cadastrada.</p>}
                   {empresas.map((e) => (
-                    <div key={e.id} className="bg-white rounded-xl shadow p-4 border border-gray-100 flex items-center justify-between">
+                    <div key={e.id} className="gt-card gt-card-hover" style={{ padding: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                       <div>
-                        <span className="font-semibold text-gray-800 text-sm">{e.nome}</span>
-                        <p className="text-gray-400 text-xs font-mono">{e.id}</p>
+                        <span className="gt-body-md" style={{ fontWeight: 600, color: "var(--color-gt-ink)" }}>{e.nome}</span>
+                        <p className="gt-micro" style={{ color: "var(--color-gt-ink-faint)", fontFamily: "monospace" }}>{e.id}</p>
                       </div>
-                      <Link href={`/empresa/${encodeURIComponent(e.id)}`} target="_blank" className="text-green-600 text-xs underline hover:text-green-700">Ver página →</Link>
+                      <Link href={`/empresa/${encodeURIComponent(e.id)}`} target="_blank" className="gt-link" style={{ fontSize: "0.75rem" }}>Ver página →</Link>
                     </div>
                   ))}
                 </div>
@@ -293,27 +289,16 @@ export default function AdminPage() {
 
             {/* Aba Configurações */}
             {aba === "config" && (
-              <div className="bg-white rounded-xl shadow p-6 border border-gray-100 max-w-md">
-                <h3 className="font-bold text-gray-800 mb-4">Meta de emissão do Selo Verde</h3>
-                <p className="text-gray-500 text-sm mb-4">Quantidade de kg validados necessários para emitir um NFT Selo Verde por empresa.</p>
-                <div className="flex gap-3">
-                  <input
-                    type="number"
-                    min="1"
-                    value={kgForm}
-                    onChange={(e) => setKgForm(e.target.value)}
-                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    placeholder="1000"
-                  />
-                  <button
-                    onClick={salvarKg}
-                    disabled={txLoading === "kg"}
-                    className="bg-purple-600 hover:bg-purple-700 disabled:bg-purple-300 text-white font-semibold px-5 py-2 rounded-lg text-sm"
-                  >
+              <div className="gt-card" style={{ padding: 24, maxWidth: 460 }}>
+                <h3 className="gt-display-md" style={{ color: "var(--color-gt-ink)", marginBottom: 12 }}>Meta de emissão do Selo Verde</h3>
+                <p className="gt-caption" style={{ color: "var(--color-gt-ink-mute)", marginBottom: 16 }}>Quantidade de kg validados necessários para emitir um NFT Selo Verde por empresa.</p>
+                <div style={{ display: "flex", gap: 12 }}>
+                  <input type="number" min="1" value={kgForm} onChange={(e) => setKgForm(e.target.value)} className="gt-input" placeholder="1000" />
+                  <button onClick={salvarKg} disabled={txLoading === "kg"} className="btn-forest" style={{ whiteSpace: "nowrap", opacity: txLoading === "kg" ? 0.6 : 1 }}>
                     {txLoading === "kg" ? "Salvando..." : "Salvar"}
                   </button>
                 </div>
-                <p className="text-gray-400 text-xs mt-2">Valor atual: {metricas?.kgParaSelo?.toLocaleString()} kg</p>
+                <p className="gt-micro" style={{ color: "var(--color-gt-ink-faint)", marginTop: 8 }}>Valor atual: {metricas?.kgParaSelo?.toLocaleString("pt-BR")} kg</p>
               </div>
             )}
           </>
@@ -323,10 +308,21 @@ export default function AdminPage() {
   );
 }
 
-function BtnAcao({ label, cor, loading, id, onClick }) {
-  const cores = { green: "bg-green-600 hover:bg-green-700", red: "bg-red-500 hover:bg-red-600", gray: "bg-gray-500 hover:bg-gray-600", blue: "bg-blue-600 hover:bg-blue-700" };
+function BtnAcao({ label, tone, loading, id, onClick }) {
+  const isOk = tone === "ok";
+  const base = {
+    fontSize: "0.75rem", fontWeight: 700, padding: "7px 14px",
+    borderRadius: "var(--radius-gt-md)", transition: "background 0.15s, filter 0.15s",
+    opacity: loading === id ? 0.5 : 1,
+  };
+  const style = isOk
+    ? { ...base, background: "var(--color-gt-forest)", color: "#fff" }
+    : { ...base, background: "transparent", color: "#8b1a1a", border: "1.5px solid rgba(180,30,30,0.3)" };
   return (
-    <button onClick={onClick} disabled={loading === id} className={`${cores[cor]} disabled:opacity-50 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors`}>
+    <button onClick={onClick} disabled={loading === id} style={style}
+      onMouseEnter={(e) => { if (isOk) e.currentTarget.style.filter = "brightness(1.1)"; else e.currentTarget.style.background = "rgba(180,30,30,0.06)"; }}
+      onMouseLeave={(e) => { if (isOk) e.currentTarget.style.filter = "none"; else e.currentTarget.style.background = "transparent"; }}
+    >
       {loading === id ? "..." : label}
     </button>
   );

@@ -7,13 +7,10 @@ import { useWallet } from "../../contexts/WalletContext";
 import { getLedgerReadOnly, getSealReadOnly, getVerifyUrl } from "../../utils/contract";
 import { getIPFSUrl } from "../../utils/ipfs";
 import QRDisplay from "../../components/QRDisplay";
+import { TopNav, AnimatedCounter, Reveal, Loader, Notice, Badge } from "../../components/ui";
 
 const STATUS_LABEL = ["PENDENTE", "VALIDADA", "REJEITADA"];
-const STATUS_COR = [
-  "bg-yellow-100 text-yellow-700",
-  "bg-green-100 text-green-700",
-  "bg-red-100 text-red-700",
-];
+const STATUS_TONE = ["pending", "ok", "error"];
 
 export default function CooperativaPage() {
   const { address, roles, loaded } = useWallet();
@@ -104,101 +101,75 @@ export default function CooperativaPage() {
   }
 
   if (!address) {
-    return <div className="min-h-screen flex items-center justify-center text-gray-400">Verificando permissões...</div>;
+    return <div className="min-h-screen flex items-center justify-center"><Loader label="Verificando permissões..." /></div>;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="bg-green-700 text-white shadow-md">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80">
-            <span className="text-2xl">🌿</span>
-            <span className="text-xl font-extrabold tracking-tight">GreenTrack</span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <span className="bg-green-600 text-white text-xs font-bold px-3 py-1 rounded-full">Cooperativa</span>
-            <span className="text-green-200 text-xs font-mono">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
-          </div>
-        </div>
-      </header>
+    <div className="flex flex-col min-h-screen" style={{ background: "var(--color-gt-canvas-soft)" }}>
+      <TopNav chip="Cooperativa" address={address} maxWidth={1120} />
 
-      <main className="flex-1 max-w-6xl mx-auto px-6 py-10 w-full">
+      <main style={{ flex: 1, maxWidth: 1120, margin: "0 auto", padding: "40px 24px", width: "100%" }}>
         {loading ? (
-          <p className="text-gray-400 text-center py-20">Carregando dados da blockchain...</p>
+          <Loader />
         ) : (
           <>
             {/* Info + ação */}
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-8">
+            <Reveal style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 32 }}>
               <div>
-                <h1 className="text-2xl font-extrabold text-gray-800">{info?.nome || "Cooperativa"}</h1>
-                <p className="text-gray-500 text-sm mt-1">
+                <h1 className="gt-display-lg" style={{ color: "var(--color-gt-ink)" }}>{info?.nome || "Cooperativa"}</h1>
+                <p className="gt-caption" style={{ color: "var(--color-gt-ink-mute)", marginTop: 4 }}>
                   {info?.material} · {info?.cidade}/{info?.estado} · CNPJ: {info?.cnpj}
                 </p>
               </div>
-              <Link
-                href="/cooperativa/pesagem"
-                className="bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-3 rounded-xl text-sm transition-colors whitespace-nowrap"
-              >
-                + Nova Pesagem
-              </Link>
-            </div>
+              <Link href="/cooperativa/pesagem" className="btn-forest" style={{ whiteSpace: "nowrap" }}>+ Nova Pesagem</Link>
+            </Reveal>
 
-            {erro && (
-              <div className="mb-6 bg-red-50 border border-red-300 text-red-700 rounded-xl px-4 py-3 text-sm">{erro}</div>
-            )}
+            {erro && <div style={{ marginBottom: 24 }}><Notice tone="error">{erro}</Notice></div>}
 
             {/* Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
-              <StatCard label="Kg enviados" value={stats.enviados.toLocaleString()} cor="text-gray-700" />
-              <StatCard label="Kg validados" value={stats.validados.toLocaleString()} cor="text-green-600" />
-              <StatCard label="Kg pendentes" value={stats.pendentes.toLocaleString()} cor="text-yellow-600" />
-              <StatCard label="Kg rejeitados" value={stats.rejeitados.toLocaleString()} cor="text-red-500" />
+            <div className="gt-stagger" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14, marginBottom: 40 }}>
+              <StatCard label="Kg enviados" value={stats.enviados} />
+              <StatCard label="Kg validados" value={stats.validados} accent />
+              <StatCard label="Kg pendentes" value={stats.pendentes} />
+              <StatCard label="Kg rejeitados" value={stats.rejeitados} />
             </div>
 
             {/* Tabela de pesagens */}
-            <div className="bg-white rounded-2xl shadow border border-gray-100 mb-10 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                <h2 className="font-bold text-gray-800">Histórico de Pesagens ({pesagens.length})</h2>
+            <Reveal className="gt-card" style={{ marginBottom: 40, overflow: "hidden" }}>
+              <div style={{ padding: "16px 24px", borderBottom: "1px solid var(--color-gt-hairline)" }}>
+                <h2 className="gt-display-md" style={{ color: "var(--color-gt-ink)" }}>Histórico de Pesagens ({pesagens.length})</h2>
               </div>
               {pesagens.length === 0 ? (
-                <p className="text-gray-400 text-sm text-center py-10">Nenhuma pesagem registrada.</p>
+                <p className="gt-caption" style={{ color: "var(--color-gt-ink-faint)", textAlign: "center", padding: "40px 0" }}>Nenhuma pesagem registrada.</p>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
-                      <tr>
-                        <th className="px-4 py-3 text-left">ID</th>
-                        <th className="px-4 py-3 text-left">Data</th>
-                        <th className="px-4 py-3 text-left">Empresa</th>
-                        <th className="px-4 py-3 text-left">Material</th>
-                        <th className="px-4 py-3 text-right">Peso</th>
-                        <th className="px-4 py-3 text-center">Status</th>
-                        <th className="px-4 py-3 text-left">Auditor</th>
-                        <th className="px-4 py-3 text-center">Evidências</th>
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", fontSize: "0.875rem", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr style={{ background: "var(--color-gt-canvas-soft)", color: "var(--color-gt-ink-mute)", fontSize: "0.6875rem", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                        <th style={{ padding: "12px 16px", textAlign: "left" }}>ID</th>
+                        <th style={{ padding: "12px 16px", textAlign: "left" }}>Data</th>
+                        <th style={{ padding: "12px 16px", textAlign: "left" }}>Empresa</th>
+                        <th style={{ padding: "12px 16px", textAlign: "left" }}>Material</th>
+                        <th style={{ padding: "12px 16px", textAlign: "right" }}>Peso</th>
+                        <th style={{ padding: "12px 16px", textAlign: "center" }}>Status</th>
+                        <th style={{ padding: "12px 16px", textAlign: "left" }}>Auditor</th>
+                        <th style={{ padding: "12px 16px", textAlign: "center" }}>Evidências</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
+                    <tbody>
                       {pesagens.map((p) => (
-                        <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-4 py-3 font-mono font-semibold text-gray-700">#{p.id}</td>
-                          <td className="px-4 py-3 text-gray-500">{new Date(p.timestamp * 1000).toLocaleDateString("pt-BR")}</td>
-                          <td className="px-4 py-3 font-mono text-xs text-gray-600">{p.empresaId}</td>
-                          <td className="px-4 py-3 text-gray-700">{p.material}</td>
-                          <td className="px-4 py-3 text-right font-semibold text-gray-800">{p.pesoKg} kg</td>
-                          <td className="px-4 py-3 text-center">
-                            <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${STATUS_COR[p.status]}`}>
-                              {STATUS_LABEL[p.status]}
-                            </span>
+                        <tr key={p.id} className="gt-row" style={{ borderTop: "1px solid var(--color-gt-hairline)" }}>
+                          <td style={{ padding: "12px 16px", fontFamily: "monospace", fontWeight: 600, color: "var(--color-gt-ink)" }}>#{p.id}</td>
+                          <td style={{ padding: "12px 16px", color: "var(--color-gt-ink-mute)" }}>{new Date(p.timestamp * 1000).toLocaleDateString("pt-BR")}</td>
+                          <td style={{ padding: "12px 16px", fontFamily: "monospace", fontSize: "0.75rem", color: "var(--color-gt-ink-mute)" }}>{p.empresaId}</td>
+                          <td style={{ padding: "12px 16px", color: "var(--color-gt-ink)" }}>{p.material}</td>
+                          <td style={{ padding: "12px 16px", textAlign: "right", fontWeight: 600, color: "var(--color-gt-ink)" }}>{p.pesoKg} kg</td>
+                          <td style={{ padding: "12px 16px", textAlign: "center" }}><Badge tone={STATUS_TONE[p.status]}>{STATUS_LABEL[p.status]}</Badge></td>
+                          <td style={{ padding: "12px 16px", fontFamily: "monospace", fontSize: "0.75rem", color: "var(--color-gt-ink-faint)" }}>
+                            {p.auditor !== "0x0000000000000000000000000000000000000000" ? `${p.auditor.slice(0, 6)}...${p.auditor.slice(-4)}` : "—"}
                           </td>
-                          <td className="px-4 py-3 font-mono text-xs text-gray-400">
-                            {p.auditor !== "0x0000000000000000000000000000000000000000"
-                              ? `${p.auditor.slice(0, 6)}...${p.auditor.slice(-4)}`
-                              : "—"}
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            <a href={getIPFSUrl(p.ipfsHash)} target="_blank" rel="noopener noreferrer" className="text-green-600 text-xs underline hover:text-green-700">
-                              Ver →
-                            </a>
+                          <td style={{ padding: "12px 16px", textAlign: "center" }}>
+                            <a href={getIPFSUrl(p.ipfsHash)} target="_blank" rel="noopener noreferrer" className="gt-link" style={{ fontSize: "0.75rem" }}>Ver →</a>
                           </td>
                         </tr>
                       ))}
@@ -206,40 +177,35 @@ export default function CooperativaPage() {
                   </table>
                 </div>
               )}
-            </div>
+            </Reveal>
 
             {/* Selos emitidos */}
             {selos.length > 0 && (
-              <div>
-                <h2 className="font-bold text-gray-800 text-lg mb-4">Selos Verdes Emitidos ({selos.length})</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              <Reveal>
+                <h2 className="gt-display-lg" style={{ color: "var(--color-gt-ink)", marginBottom: 20 }}>Selos Verdes Emitidos ({selos.length})</h2>
+                <div className="gt-stagger" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 20 }}>
                   {selos.map((s) => (
-                    <div key={s.tokenId} className="bg-white rounded-2xl shadow p-5 border border-green-100">
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-2xl">🏅</span>
-                        <div>
-                          <p className="font-bold text-green-700 text-sm">Selo Verde #{s.tokenId}</p>
-                          <p className="text-gray-500 text-xs">{s.empresaId}</p>
-                        </div>
+                    <div key={s.tokenId} className="gt-card gt-card-hover" style={{ padding: 20 }}>
+                      <div style={{ marginBottom: 12 }}>
+                        <p className="gt-display-md" style={{ color: "var(--color-gt-forest)" }}>Selo Verde #{s.tokenId}</p>
+                        <p className="gt-micro" style={{ color: "var(--color-gt-ink-mute)", fontFamily: "monospace" }}>{s.empresaId}</p>
                       </div>
-                      <p className="text-gray-600 text-xs mb-3">{s.kg.toLocaleString()} kg certificados</p>
-                      <QRDisplay url={getVerifyUrl(s.tokenId)} compact />
-                      <Link
-                        href={`/verify/11155111/${process.env.NEXT_PUBLIC_CONTRACT_SEAL}/${s.tokenId}`}
-                        className="mt-3 block text-center bg-green-600 hover:bg-green-700 text-white text-xs font-semibold py-2 rounded-lg transition-colors"
-                      >
-                        🔍 Ver auditoria
+                      <p className="gt-caption" style={{ color: "var(--color-gt-ink-mute)", marginBottom: 12 }}>{s.kg.toLocaleString("pt-BR")} kg certificados</p>
+                      <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}><QRDisplay url={getVerifyUrl(s.tokenId)} compact /></div>
+                      <Link href={`/verify/11155111/${process.env.NEXT_PUBLIC_CONTRACT_SEAL}/${s.tokenId}`} className="btn-forest" style={{ width: "100%", justifyContent: "center", fontSize: "0.8125rem", padding: "8px", marginBottom: 8 }}>
+                        Ver auditoria
                       </Link>
-                      <Link
-                        href={`/empresa/${encodeURIComponent(s.empresaId)}`}
-                        className="block text-center text-green-700 border border-green-300 hover:bg-green-50 text-xs font-semibold py-2 rounded-lg transition-colors"
+                      <Link href={`/empresa/${encodeURIComponent(s.empresaId)}`}
+                        style={{ display: "block", textAlign: "center", color: "var(--color-gt-forest)", border: "1px solid var(--color-gt-hairline)", fontSize: "0.8125rem", fontWeight: 600, padding: "8px", borderRadius: "var(--radius-gt-md)", transition: "background 0.15s" }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = "var(--color-gt-canvas-soft)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                       >
                         Página pública →
                       </Link>
                     </div>
                   ))}
                 </div>
-              </div>
+              </Reveal>
             )}
           </>
         )}
@@ -248,11 +214,13 @@ export default function CooperativaPage() {
   );
 }
 
-function StatCard({ label, value, cor }) {
+function StatCard({ label, value, accent }) {
   return (
-    <div className="bg-white rounded-2xl shadow p-4 text-center border border-gray-100">
-      <p className={`text-2xl font-extrabold ${cor}`}>{value}</p>
-      <p className="text-gray-500 text-xs mt-1">{label}</p>
+    <div className="gt-card gt-card-hover" style={{ padding: 20, textAlign: "center" }}>
+      <p style={{ fontSize: "1.625rem", fontWeight: 560, letterSpacing: "-0.02em", lineHeight: 1, color: accent ? "var(--color-gt-forest)" : "var(--color-gt-ink)" }}>
+        <AnimatedCounter value={value} />
+      </p>
+      <p className="gt-micro" style={{ color: "var(--color-gt-ink-mute)", marginTop: 6 }}>{label}</p>
     </div>
   );
 }

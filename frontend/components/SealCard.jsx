@@ -1,5 +1,7 @@
 "use client";
 
+import { AnimatedCounter } from "./ui";
+
 export default function SealCard({ empresaId, totalKg, totalPesagens, selosEmitidos }) {
   const KG_POR_SELO = 1000;
   const kgNoProximo = totalKg % KG_POR_SELO;
@@ -7,56 +9,58 @@ export default function SealCard({ empresaId, totalKg, totalPesagens, selosEmiti
   const faltam = KG_POR_SELO - kgNoProximo;
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg overflow-hidden w-full max-w-md">
-      {/* Header com gradiente verde */}
-      <div className="bg-gradient-to-r from-green-600 to-emerald-500 px-6 py-5 text-white">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-2xl">🏅</span>
-          <span className="text-sm font-semibold uppercase tracking-wider opacity-90">
-            Selo de Impacto Verde
-          </span>
-        </div>
-        <p className="text-xs opacity-75 truncate">{empresaId}</p>
+    <div className="gt-card" style={{ overflow: "hidden", width: "100%", maxWidth: 420 }}>
+      {/* Header — forest band */}
+      <div style={{ background: "var(--color-gt-forest)", padding: "20px 24px", color: "#ffffff" }}>
+        <p className="gt-micro" style={{ color: "var(--color-gt-leaf-soft)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>
+          Selo de Impacto Verde
+        </p>
+        <p className="gt-caption" style={{ color: "var(--color-gt-on-dark-mute)", fontFamily: "monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {empresaId}
+        </p>
       </div>
 
       {/* Métricas */}
-      <div className="px-6 py-5">
-        <div className="grid grid-cols-3 gap-4 mb-5">
-          <div className="text-center">
-            <p className="text-3xl font-extrabold text-green-700">{totalKg.toLocaleString()}</p>
-            <p className="text-xs text-gray-500 mt-0.5">kg reciclados</p>
-          </div>
-          <div className="text-center">
-            <p className="text-3xl font-extrabold text-gray-700">{totalPesagens}</p>
-            <p className="text-xs text-gray-500 mt-0.5">pesagens</p>
-          </div>
-          <div className="text-center">
-            <p className="text-3xl font-extrabold text-emerald-600">{selosEmitidos}</p>
-            <p className="text-xs text-gray-500 mt-0.5">selos emitidos</p>
-          </div>
+      <div style={{ padding: "20px 24px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 20 }}>
+          {[
+            { value: totalKg, label: "kg reciclados", color: "var(--color-gt-forest)" },
+            { value: totalPesagens, label: "pesagens", color: "var(--color-gt-ink)" },
+            { value: selosEmitidos, label: "selos emitidos", color: "var(--color-gt-forest)" },
+          ].map((m) => (
+            <div key={m.label} style={{ textAlign: "center" }}>
+              <p style={{ fontSize: "1.625rem", fontWeight: 560, color: m.color, letterSpacing: "-0.02em", lineHeight: 1 }}>
+                <AnimatedCounter value={m.value} />
+              </p>
+              <p className="gt-micro" style={{ color: "var(--color-gt-ink-mute)", marginTop: 4 }}>{m.label}</p>
+            </div>
+          ))}
         </div>
 
         {/* Barra de progresso */}
-        <div className="mb-2">
-          <div className="flex justify-between text-xs text-gray-500 mb-1">
+        <div style={{ marginBottom: 8 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "var(--color-gt-ink-mute)", marginBottom: 6 }}>
             <span>Progresso para o próximo selo</span>
             <span>{Math.round(progresso)}%</span>
           </div>
-          <div className="w-full bg-gray-100 rounded-full h-3">
+          <div style={{ width: "100%", background: "var(--color-gt-hairline)", borderRadius: 9999, height: 10, overflow: "hidden" }}>
             <div
-              className="bg-gradient-to-r from-green-500 to-emerald-400 h-3 rounded-full transition-all duration-500"
-              style={{ width: `${progresso}%` }}
+              style={{
+                background: "linear-gradient(90deg, var(--color-gt-forest), var(--color-gt-leaf-soft))",
+                height: 10,
+                borderRadius: 9999,
+                width: `${progresso}%`,
+                transition: "width 0.9s cubic-bezier(0.16,1,0.3,1)",
+              }}
             />
           </div>
         </div>
 
-        <p className="text-center text-sm text-gray-600 mt-3">
+        <p className="gt-caption" style={{ textAlign: "center", color: "var(--color-gt-ink-mute)", marginTop: 12 }}>
           {kgNoProximo === 0 && totalKg > 0 ? (
-            <span className="text-green-600 font-semibold">Novo selo disponível para emissão!</span>
+            <span style={{ color: "var(--color-gt-forest)", fontWeight: 600 }}>Novo selo disponível para emissão!</span>
           ) : (
-            <>
-              Faltam <strong>{faltam} kg</strong> para o próximo Selo Verde
-            </>
+            <>Faltam <strong style={{ color: "var(--color-gt-ink)" }}>{faltam} kg</strong> para o próximo Selo Verde</>
           )}
         </p>
       </div>

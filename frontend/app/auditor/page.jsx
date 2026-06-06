@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useWallet } from "../../contexts/WalletContext";
 import { getLedgerReadOnly, getLedgerSigner, conectarCarteira } from "../../utils/contract";
 import { getIPFSUrl } from "../../utils/ipfs";
+import { TopNav, Reveal, Loader, Notice, Badge } from "../../components/ui";
 
 export default function AuditorPage() {
   const { address, roles, loaded } = useWallet();
@@ -100,75 +101,60 @@ export default function AuditorPage() {
     }
   }
 
-  if (!address) return <div className="min-h-screen flex items-center justify-center text-gray-400">Verificando permissões...</div>;
+  if (!address) return <div className="min-h-screen flex items-center justify-center"><Loader label="Verificando permissões..." /></div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="bg-blue-700 text-white shadow-md">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80">
-            <span className="text-2xl">🌿</span>
-            <span className="text-xl font-extrabold tracking-tight">GreenTrack</span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">Auditor</span>
-            <span className="text-blue-200 text-xs font-mono">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
-          </div>
-        </div>
-      </header>
+    <div className="flex flex-col min-h-screen" style={{ background: "var(--color-gt-canvas-soft)" }}>
+      <TopNav chip="Auditor" address={address} />
 
-      <main className="flex-1 max-w-5xl mx-auto px-6 py-10 w-full">
-        {info && (
-          <div className="mb-8">
-            <h1 className="text-2xl font-extrabold text-gray-800">{info.nome}</h1>
-            <p className="text-gray-500 text-sm mt-1">{info.tipoAuditor} · {info.organizacao}</p>
-          </div>
-        )}
-        {!info && <h1 className="text-2xl font-extrabold text-gray-800 mb-8">Painel do Auditor</h1>}
+      <main style={{ flex: 1, maxWidth: 1080, margin: "0 auto", padding: "40px 24px", width: "100%" }}>
+        <Reveal style={{ marginBottom: 32 }}>
+          <h1 className="gt-display-lg" style={{ color: "var(--color-gt-ink)" }}>{info?.nome || "Painel do Auditor"}</h1>
+          {info && <p className="gt-caption" style={{ color: "var(--color-gt-ink-mute)", marginTop: 4 }}>{info.tipoAuditor} · {info.organizacao}</p>}
+        </Reveal>
 
-        {erro && (
-          <div className="mb-5 bg-red-50 border border-red-300 text-red-700 rounded-xl px-4 py-3 text-sm flex justify-between">
-            {erro}
-            <button onClick={() => setErro("")} className="font-bold">×</button>
-          </div>
-        )}
+        {erro && <div style={{ marginBottom: 20 }}><Notice tone="error" onClose={() => setErro("")}>{erro}</Notice></div>}
 
         {loading ? (
-          <p className="text-gray-400 text-center py-20">Carregando pesagens pendentes...</p>
+          <Loader label="Carregando pesagens pendentes..." />
         ) : pendentes.length === 0 ? (
-          <div className="bg-green-50 rounded-2xl p-12 text-center text-green-700">
-            <p className="text-4xl mb-3">🎉</p>
-            <p className="font-semibold">Nenhuma pesagem pendente de validação.</p>
+          <div className="gt-card gt-scale-in" style={{ padding: 48, textAlign: "center" }}>
+            <p className="gt-display-md" style={{ color: "var(--color-gt-forest)", marginBottom: 6 }}>Tudo em dia</p>
+            <p className="gt-caption" style={{ color: "var(--color-gt-ink-mute)" }}>Nenhuma pesagem pendente de validação.</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-4">
-            <p className="text-sm text-gray-500 mb-1">{pendentes.length} pesagem(ns) aguardando validação</p>
+          <div className="gt-stagger" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <p className="gt-caption" style={{ color: "var(--color-gt-ink-mute)" }}>{pendentes.length} pesagem(ns) aguardando validação</p>
             {pendentes.map((p) => (
-              <div key={p.id} className="bg-white rounded-xl shadow p-6 border border-gray-100">
-                <div className="flex items-start justify-between gap-4 flex-wrap">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs bg-yellow-100 text-yellow-700 font-semibold px-2 py-0.5 rounded-full">PENDENTE</span>
-                      <span className="text-lg font-bold text-gray-800">#{p.id} — {p.material}</span>
+              <div key={p.id} className="gt-card gt-card-hover" style={{ padding: 24 }}>
+                <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
+                  <div style={{ flex: 1, minWidth: 240 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                      <Badge tone="pending">PENDENTE</Badge>
+                      <span className="gt-display-md" style={{ color: "var(--color-gt-ink)" }}>#{p.id} — {p.material}</span>
                     </div>
-                    <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-gray-600">
-                      <p><span className="text-gray-400">Peso:</span> <strong>{p.pesoKg} kg</strong></p>
-                      <p><span className="text-gray-400">Empresa:</span> {p.empresaId}</p>
-                      {p.localColeta && <p><span className="text-gray-400">Local:</span> {p.localColeta}</p>}
-                      {p.dataColeta && <p><span className="text-gray-400">Data coleta:</span> {p.dataColeta}</p>}
-                      <p><span className="text-gray-400">Cooperativa:</span> <span className="font-mono text-xs">{p.cooperativa.slice(0, 8)}...{p.cooperativa.slice(-4)}</span></p>
-                      <p><span className="text-gray-400">Registrada:</span> {new Date(p.timestamp * 1000).toLocaleDateString("pt-BR")}</p>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 24px", fontSize: "0.875rem", color: "var(--color-gt-ink-mute)" }}>
+                      <p><span style={{ color: "var(--color-gt-ink-faint)" }}>Peso:</span> <strong style={{ color: "var(--color-gt-ink)" }}>{p.pesoKg} kg</strong></p>
+                      <p><span style={{ color: "var(--color-gt-ink-faint)" }}>Empresa:</span> {p.empresaId}</p>
+                      {p.localColeta && <p><span style={{ color: "var(--color-gt-ink-faint)" }}>Local:</span> {p.localColeta}</p>}
+                      {p.dataColeta && <p><span style={{ color: "var(--color-gt-ink-faint)" }}>Data coleta:</span> {p.dataColeta}</p>}
+                      <p><span style={{ color: "var(--color-gt-ink-faint)" }}>Cooperativa:</span> <span style={{ fontFamily: "monospace", fontSize: "0.75rem" }}>{p.cooperativa.slice(0, 8)}...{p.cooperativa.slice(-4)}</span></p>
+                      <p><span style={{ color: "var(--color-gt-ink-faint)" }}>Registrada:</span> {new Date(p.timestamp * 1000).toLocaleDateString("pt-BR")}</p>
                     </div>
-                    <a href={getIPFSUrl(p.ipfsHash)} target="_blank" rel="noopener noreferrer" className="text-green-600 text-xs underline mt-2 inline-block hover:text-green-700">
+                    <a href={getIPFSUrl(p.ipfsHash)} target="_blank" rel="noopener noreferrer" className="gt-link" style={{ fontSize: "0.75rem", marginTop: 8, display: "inline-block" }}>
                       Ver evidências no IPFS →
                     </a>
                   </div>
-                  <div className="flex gap-2 mt-2">
-                    <button onClick={() => validar(p.id)} disabled={txLoading === p.id} className="bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white text-sm font-semibold px-5 py-2 rounded-lg transition-colors">
-                      {txLoading === p.id ? "..." : "✅ Validar"}
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button onClick={() => validar(p.id)} disabled={txLoading === p.id} className="btn-forest" style={{ fontSize: "0.875rem", padding: "9px 18px", opacity: txLoading === p.id ? 0.6 : 1 }}>
+                      {txLoading === p.id ? "..." : "Validar"}
                     </button>
-                    <button onClick={() => { setModalId(p.id); setMotivo(""); }} disabled={txLoading === p.id} className="bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white text-sm font-semibold px-5 py-2 rounded-lg transition-colors">
-                      ❌ Rejeitar
+                    <button onClick={() => { setModalId(p.id); setMotivo(""); }} disabled={txLoading === p.id}
+                      style={{ fontSize: "0.875rem", fontWeight: 700, padding: "9px 18px", borderRadius: "var(--radius-gt-md)", border: "1.5px solid rgba(180,30,30,0.3)", color: "#8b1a1a", background: "transparent", transition: "background 0.15s", opacity: txLoading === p.id ? 0.6 : 1 }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(180,30,30,0.06)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                    >
+                      Rejeitar
                     </button>
                   </div>
                 </div>
@@ -179,13 +165,18 @@ export default function AuditorPage() {
       </main>
 
       {modalId !== null && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-bold text-gray-800 mb-3">Motivo da Rejeição — Pesagem #{modalId}</h3>
-            <textarea value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Descreva o motivo da rejeição..." className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400 min-h-[100px]" />
-            <div className="flex gap-3 mt-4">
-              <button onClick={rejeitar} disabled={!motivo.trim()} className="flex-1 bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white font-semibold py-2 rounded-lg text-sm">Confirmar Rejeição</button>
-              <button onClick={() => setModalId(null)} className="flex-1 border border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-2 rounded-lg text-sm">Cancelar</button>
+        <div className="gt-fade-in" style={{ position: "fixed", inset: 0, background: "rgba(7,20,13,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, padding: 16 }}>
+          <div className="gt-scale-in" style={{ background: "#ffffff", borderRadius: "var(--radius-gt-xl)", padding: 24, width: "100%", maxWidth: 440, boxShadow: "0 20px 60px rgba(0,0,0,0.25)" }}>
+            <h3 className="gt-display-md" style={{ color: "var(--color-gt-ink)", marginBottom: 12 }}>Motivo da Rejeição — Pesagem #{modalId}</h3>
+            <textarea value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Descreva o motivo da rejeição..." className="gt-textarea" style={{ minHeight: 100, resize: "none" }} />
+            <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
+              <button onClick={rejeitar} disabled={!motivo.trim()}
+                style={{ flex: 1, fontWeight: 700, fontSize: "0.875rem", padding: "10px", borderRadius: "var(--radius-gt-md)", background: "#b81c1c", color: "#fff", opacity: motivo.trim() ? 1 : 0.5 }}>
+                Confirmar Rejeição
+              </button>
+              <button onClick={() => setModalId(null)} style={{ flex: 1, fontWeight: 600, fontSize: "0.875rem", padding: "10px", borderRadius: "var(--radius-gt-md)", border: "1px solid var(--color-gt-hairline)", color: "var(--color-gt-ink-mute)" }}>
+                Cancelar
+              </button>
             </div>
           </div>
         </div>

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { getLedgerReadOnly, getSealReadOnly, getVerifyUrl, getIPFSUrl, getEtherscanAddress, getEtherscanTx, getEtherscanToken } from "../../../../../utils/contract";
 import { getIPFSUrl as ipfsUrl } from "../../../../../utils/ipfs";
 import QRDisplay from "../../../../../components/QRDisplay";
+import { TopNav, Reveal, Loader, Badge } from "../../../../../components/ui";
 
 const SEAL_ADDRESS   = process.env.NEXT_PUBLIC_CONTRACT_SEAL;
 const LEDGER_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_LEDGER;
@@ -110,72 +111,52 @@ export default function VerifyPage() {
 
   if (!isValidChain || !isValidContract) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="bg-white rounded-2xl shadow p-8 max-w-md text-center">
-          <p className="text-4xl mb-3">⚠️</p>
-          <p className="text-gray-800 font-bold mb-2">URL de verificação inválida</p>
-          <p className="text-gray-500 text-sm">Os parâmetros da URL não correspondem à rede ou contrato esperados.</p>
-          <Link href="/dashboard" className="mt-5 inline-block text-green-600 underline text-sm">Voltar ao dashboard</Link>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--color-gt-canvas-soft)" }}>
+        <div className="gt-card gt-scale-in" style={{ padding: 32, maxWidth: 440, textAlign: "center" }}>
+          <p className="gt-display-md" style={{ color: "var(--color-gt-ink)", marginBottom: 8 }}>URL de verificação inválida</p>
+          <p className="gt-caption" style={{ color: "var(--color-gt-ink-mute)" }}>Os parâmetros da URL não correspondem à rede ou contrato esperados.</p>
+          <Link href="/dashboard" className="gt-link" style={{ marginTop: 20, display: "inline-block", fontSize: "0.875rem" }}>Voltar ao dashboard</Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="bg-green-700 text-white shadow-md">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80">
-            <span className="text-2xl">🌿</span>
-            <span className="text-xl font-extrabold tracking-tight">GreenTrack</span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <span className="bg-green-600 text-white text-xs font-bold px-3 py-1 rounded-full">Verificação On-Chain</span>
-            <Link href="/dashboard" className="text-green-200 text-sm hover:text-white">Dashboard →</Link>
-          </div>
-        </div>
-      </header>
+    <div className="flex flex-col min-h-screen" style={{ background: "var(--color-gt-canvas-soft)" }}>
+      <TopNav
+        chip="Verificação On-Chain"
+        right={<Link href="/dashboard" className="gt-caption" style={{ color: "var(--color-gt-on-dark-mute)" }}>Dashboard →</Link>}
+      />
 
-      <main className="flex-1 max-w-5xl mx-auto px-6 py-10 w-full">
+      <main style={{ flex: 1, maxWidth: 1080, margin: "0 auto", padding: "40px 24px", width: "100%" }}>
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-24 gap-4">
-            <div className="w-10 h-10 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
-            <p className="text-gray-400 text-sm">Consultando a blockchain...</p>
-          </div>
+          <Loader />
         ) : erro ? (
-          <div className="bg-red-50 border border-red-300 text-red-700 rounded-2xl px-6 py-8 text-center">
-            <p className="text-2xl mb-2">❌</p>
-            <p className="font-semibold">{erro}</p>
-            <Link href="/dashboard" className="mt-4 inline-block text-green-600 underline text-sm">Voltar ao dashboard</Link>
+          <div className="gt-card" style={{ padding: "32px", textAlign: "center", border: "1px solid rgba(180,30,30,0.2)" }}>
+            <p className="gt-display-md" style={{ color: "#8b1a1a", marginBottom: 8 }}>Erro</p>
+            <p className="gt-caption" style={{ color: "var(--color-gt-ink-mute)" }}>{erro}</p>
+            <Link href="/dashboard" className="gt-link" style={{ marginTop: 16, display: "inline-block", fontSize: "0.875rem" }}>Voltar ao dashboard</Link>
           </div>
         ) : selo && (
           <>
             {/* ── Cabeçalho do Selo ────────────────────────────────────────── */}
-            <div className="flex flex-col lg:flex-row gap-8 mb-10">
-              {/* Info do Selo */}
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="text-4xl">🏅</span>
-                  <div>
-                    <h1 className="text-2xl font-extrabold text-gray-800">Selo Verde #{selo.tokenId}</h1>
-                    <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded-full mt-1">
-                      ✅ Válido — Emitido na blockchain
-                    </span>
-                  </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 32, marginBottom: 40 }}>
+              <Reveal style={{ flex: 1, minWidth: 300 }}>
+                <div style={{ marginBottom: 16 }}>
+                  <h1 className="gt-display-lg" style={{ color: "var(--color-gt-ink)", marginBottom: 8 }}>Selo Verde #{selo.tokenId}</h1>
+                  <Badge tone="ok">Válido — Emitido na blockchain</Badge>
                 </div>
 
-                <div className="bg-white rounded-2xl shadow border border-gray-100 p-5 flex flex-col gap-3 text-sm">
-                  <Row label="Token ID"       value={`#${selo.tokenId}`} mono />
-                  <Row label="Empresa"         value={selo.empresaId} mono />
-                  <Row label="Kg certificados" value={`${selo.totalKg.toLocaleString()} kg`} bold green />
-                  <Row label="Material(is)"    value={materials.join(", ") || "—"} />
-                  <Row label="Status"          value="✅ Válido" />
-                  <Row label="Rede"            value="Ethereum Sepolia (chainId: 11155111)" />
+                <div className="gt-card" style={{ padding: 20, display: "flex", flexDirection: "column", gap: 2 }}>
+                  <Row label="Token ID" value={`#${selo.tokenId}`} mono />
+                  <Row label="Empresa" value={selo.empresaId} mono />
+                  <Row label="Kg certificados" value={`${selo.totalKg.toLocaleString("pt-BR")} kg`} bold green />
+                  <Row label="Material(is)" value={materials.join(", ") || "—"} />
+                  <Row label="Rede" value="Ethereum Sepolia (11155111)" />
                   <Row label="Contrato GreenSeal" value={SEAL_ADDRESS} mono link={getEtherscanAddress(SEAL_ADDRESS)} />
-                  <Row label="Contrato Ledger"    value={LEDGER_ADDRESS} mono link={getEtherscanAddress(LEDGER_ADDRESS)} />
-
+                  <Row label="Contrato Ledger" value={LEDGER_ADDRESS} mono link={getEtherscanAddress(LEDGER_ADDRESS)} />
                   {txLoading ? (
-                    <div className="text-gray-400 text-xs animate-pulse">Buscando hash da transação de mint...</div>
+                    <p className="gt-micro" style={{ color: "var(--color-gt-ink-faint)", padding: "6px 0", animation: "gt-pulse-soft 1.6s infinite" }}>Buscando hash da transação de mint...</p>
                   ) : txData.mintTxHash ? (
                     <Row label="Transação de mint" value={`${txData.mintTxHash.slice(0, 16)}...`} mono link={getEtherscanTx(txData.mintTxHash)} />
                   ) : (
@@ -184,99 +165,89 @@ export default function VerifyPage() {
                 </div>
 
                 {/* Cooperativas envolvidas */}
-                <div className="mt-4 bg-white rounded-2xl shadow border border-gray-100 p-5">
-                  <p className="text-xs font-bold text-gray-500 uppercase mb-3">Cooperativas envolvidas</p>
+                <div className="gt-card" style={{ marginTop: 16, padding: 20 }}>
+                  <p className="gt-micro" style={{ fontWeight: 700, color: "var(--color-gt-ink-mute)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>Cooperativas envolvidas</p>
                   {cooperativas.map((c) => (
-                    <div key={c} className="flex items-center gap-2 text-sm text-gray-700 mb-1">
-                      <span className="text-green-600">♻️</span>
-                      <a href={getEtherscanAddress(c)} target="_blank" rel="noopener noreferrer" className="font-mono hover:text-green-600 transition-colors">
+                    <div key={c} style={{ marginBottom: 6 }}>
+                      <a href={getEtherscanAddress(c)} target="_blank" rel="noopener noreferrer" className="gt-link" style={{ fontFamily: "monospace", fontSize: "0.875rem" }}>
                         {c.slice(0, 10)}...{c.slice(-6)} ↗
                       </a>
                     </div>
                   ))}
                 </div>
-              </div>
+              </Reveal>
 
               {/* QR Code */}
-              <div className="flex flex-col items-center gap-3">
+              <Reveal delay={120} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
                 <QRDisplay url={verifyUrl} />
-                <p className="text-xs text-gray-400 text-center max-w-xs">
+                <p className="gt-micro" style={{ color: "var(--color-gt-ink-faint)", textAlign: "center", maxWidth: 280 }}>
                   Este QR Code contém a URL pública de verificação deste Selo Verde na blockchain.
                 </p>
-                <a
-                  href={getEtherscanToken(selo.tokenId)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-green-600 underline hover:text-green-700"
-                >
+                <a href={getEtherscanToken(selo.tokenId)} target="_blank" rel="noopener noreferrer" className="gt-link" style={{ fontSize: "0.75rem" }}>
                   Ver NFT no Etherscan ↗
                 </a>
-              </div>
+              </Reveal>
             </div>
 
             {/* ── Bloco On-chain vs Off-chain ──────────────────────────────── */}
-            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 mb-10">
-              <h2 className="text-blue-800 font-bold mb-2 flex items-center gap-2">
-                <span>🔗</span> On-chain vs Off-chain
-              </h2>
-              <p className="text-blue-700 text-sm leading-relaxed">
-                Os dados críticos do impacto ficam <strong>on-chain</strong>: peso em kg, tipo de material, endereço da cooperativa, auditor responsável, status da pesagem, CID IPFS e NFT emitido. As evidências físicas, como fotos do tíquete da balança e dos fardos, ficam <strong>off-chain no IPFS</strong>. A blockchain armazena o hash dessas evidências, garantindo rastreabilidade e integridade — qualquer alteração nas fotos invalidaria o hash, tornando a fraude detectável.
+            <Reveal style={{ background: "var(--color-gt-forest)", borderRadius: "var(--radius-gt-lg)", padding: 24, marginBottom: 40 }}>
+              <h2 className="gt-display-md" style={{ color: "var(--color-gt-leaf-soft)", marginBottom: 8 }}>On-chain vs Off-chain</h2>
+              <p className="gt-body-md" style={{ color: "var(--color-gt-on-dark-mute)" }}>
+                Os dados críticos do impacto ficam <strong style={{ color: "#fff" }}>on-chain</strong>: peso em kg, tipo de material, endereço da cooperativa, auditor responsável, status da pesagem, CID IPFS e NFT emitido. As evidências físicas, como fotos do tíquete da balança e dos fardos, ficam <strong style={{ color: "#fff" }}>off-chain no IPFS</strong>. A blockchain armazena o hash dessas evidências, garantindo rastreabilidade e integridade — qualquer alteração nas fotos invalidaria o hash, tornando a fraude detectável.
               </p>
-            </div>
+            </Reveal>
 
             {/* ── Pesagens vinculadas ──────────────────────────────────────── */}
-            <div className="mb-10">
-              <h2 className="text-lg font-bold text-gray-800 mb-1">
+            <Reveal style={{ marginBottom: 40 }}>
+              <h2 className="gt-display-lg" style={{ color: "var(--color-gt-ink)", marginBottom: 4 }}>
                 Pesagens Certificadas ({pesagens.length})
               </h2>
-              <p className="text-gray-500 text-sm mb-5">
+              <p className="gt-caption" style={{ color: "var(--color-gt-ink-mute)", marginBottom: 20 }}>
                 Pesagens validadas que contribuíram para a certificação desta empresa.
               </p>
 
               {pesagens.length === 0 ? (
-                <p className="text-gray-400 text-sm">Nenhuma pesagem encontrada.</p>
+                <p className="gt-caption" style={{ color: "var(--color-gt-ink-faint)" }}>Nenhuma pesagem encontrada.</p>
               ) : (
-                <div className="flex flex-col gap-4">
+                <div className="gt-stagger" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                   {pesagens.map((p) => {
                     const txs = txData.pesagemTxs?.[p.id];
                     return (
-                      <div key={p.id} className="bg-white rounded-2xl shadow border border-gray-100 p-5">
-                        <div className="flex items-start justify-between flex-wrap gap-3 mb-4">
+                      <div key={p.id} className="gt-card gt-card-hover" style={{ padding: 20 }}>
+                        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
                           <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-xs bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded-full">✅ CERTIFICADA</span>
-                              <span className="font-bold text-gray-800">Pesagem #{p.id}</span>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                              <Badge tone="ok">CERTIFICADA</Badge>
+                              <span className="gt-body-md" style={{ fontWeight: 600, color: "var(--color-gt-ink)" }}>Pesagem #{p.id}</span>
                             </div>
-                            <p className="text-gray-500 text-xs">{new Date(p.timestamp * 1000).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}</p>
+                            <p className="gt-micro" style={{ color: "var(--color-gt-ink-mute)" }}>{new Date(p.timestamp * 1000).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}</p>
                           </div>
-                          <div className="text-right">
-                            <p className="text-2xl font-extrabold text-green-700">{p.pesoKg.toLocaleString()} kg</p>
-                            <p className="text-gray-500 text-xs">{p.material}</p>
+                          <div style={{ textAlign: "right" }}>
+                            <p style={{ fontSize: "1.5rem", fontWeight: 560, color: "var(--color-gt-forest)" }}>{p.pesoKg.toLocaleString("pt-BR")} kg</p>
+                            <p className="gt-micro" style={{ color: "var(--color-gt-ink-mute)" }}>{p.material}</p>
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                          <InfoRow label="Material"      value={p.material} />
-                          <InfoRow label="Empresa"       value={p.empresaId} mono />
-                          <InfoRow label="Cooperativa"   value={`${p.cooperativa.slice(0, 10)}...${p.cooperativa.slice(-6)}`} mono link={getEtherscanAddress(p.cooperativa)} />
-                          <InfoRow label="Auditor"       value={p.auditor !== "0x0000000000000000000000000000000000000000" ? `${p.auditor.slice(0, 10)}...${p.auditor.slice(-6)}` : "—"} mono link={p.auditor !== "0x0000000000000000000000000000000000000000" ? getEtherscanAddress(p.auditor) : null} />
-                          <InfoRow label="CID IPFS"      value={`${p.ipfsHash.slice(0, 20)}...`} link={ipfsUrl(p.ipfsHash)} />
-                          <InfoRow label="Evidências"    value="Ver fotos no IPFS ↗" link={ipfsUrl(p.ipfsHash)} />
-
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
+                          <InfoRow label="Material" value={p.material} />
+                          <InfoRow label="Empresa" value={p.empresaId} mono />
+                          <InfoRow label="Cooperativa" value={`${p.cooperativa.slice(0, 10)}...${p.cooperativa.slice(-6)}`} mono link={getEtherscanAddress(p.cooperativa)} />
+                          <InfoRow label="Auditor" value={p.auditor !== "0x0000000000000000000000000000000000000000" ? `${p.auditor.slice(0, 10)}...${p.auditor.slice(-6)}` : "—"} mono link={p.auditor !== "0x0000000000000000000000000000000000000000" ? getEtherscanAddress(p.auditor) : null} />
+                          <InfoRow label="CID IPFS" value={`${p.ipfsHash.slice(0, 20)}...`} link={ipfsUrl(p.ipfsHash)} />
+                          <InfoRow label="Evidências" value="Ver fotos no IPFS ↗" link={ipfsUrl(p.ipfsHash)} />
                           {txLoading ? (
-                            <InfoRow label="Tx Registro"    value="Buscando..." />
+                            <InfoRow label="Tx Registro" value="Buscando..." />
                           ) : txs?.reg ? (
-                            <InfoRow label="Tx Registro"    value={`${txs.reg.slice(0, 14)}...`} mono link={getEtherscanTx(txs.reg)} />
+                            <InfoRow label="Tx Registro" value={`${txs.reg.slice(0, 14)}...`} mono link={getEtherscanTx(txs.reg)} />
                           ) : (
-                            <InfoRow label="Tx Registro"    value="Ver no Etherscan ↗" link={`https://sepolia.etherscan.io/address/${LEDGER_ADDRESS}#events`} />
+                            <InfoRow label="Tx Registro" value="Ver no Etherscan ↗" link={`https://sepolia.etherscan.io/address/${LEDGER_ADDRESS}#events`} />
                           )}
-
                           {txLoading ? (
-                            <InfoRow label="Tx Validação"   value="Buscando..." />
+                            <InfoRow label="Tx Validação" value="Buscando..." />
                           ) : txs?.val ? (
-                            <InfoRow label="Tx Validação"   value={`${txs.val.slice(0, 14)}...`} mono link={getEtherscanTx(txs.val)} />
+                            <InfoRow label="Tx Validação" value={`${txs.val.slice(0, 14)}...`} mono link={getEtherscanTx(txs.val)} />
                           ) : (
-                            <InfoRow label="Tx Validação"   value="Ver no Etherscan ↗" link={`https://sepolia.etherscan.io/address/${LEDGER_ADDRESS}#events`} />
+                            <InfoRow label="Tx Validação" value="Ver no Etherscan ↗" link={`https://sepolia.etherscan.io/address/${LEDGER_ADDRESS}#events`} />
                           )}
                         </div>
                       </div>
@@ -284,18 +255,16 @@ export default function VerifyPage() {
                   })}
                 </div>
               )}
-            </div>
+            </Reveal>
 
             {/* ── Rodapé de verificação ─────────────────────────────────────── */}
-            <div className="bg-gray-100 rounded-2xl p-5 text-center text-xs text-gray-500">
-              <p>Dados verificáveis publicamente na blockchain Ethereum Sepolia.</p>
-              <p className="mt-1">
+            <div style={{ background: "var(--color-gt-canvas-soft)", border: "1px solid var(--color-gt-hairline)", borderRadius: "var(--radius-gt-lg)", padding: 20, textAlign: "center" }}>
+              <p className="gt-caption" style={{ color: "var(--color-gt-ink-mute)" }}>Dados verificáveis publicamente na blockchain Ethereum Sepolia.</p>
+              <p className="gt-caption" style={{ marginTop: 4 }}>
                 Contrato:{" "}
-                <a href={getEtherscanAddress(SEAL_ADDRESS)} target="_blank" rel="noopener noreferrer" className="text-green-600 underline font-mono">
-                  {SEAL_ADDRESS}
-                </a>
+                <a href={getEtherscanAddress(SEAL_ADDRESS)} target="_blank" rel="noopener noreferrer" className="gt-link" style={{ fontFamily: "monospace" }}>{SEAL_ADDRESS}</a>
               </p>
-              <p className="mt-1">
+              <p className="gt-micro" style={{ color: "var(--color-gt-ink-faint)", marginTop: 4 }}>
                 Esta página é gerada dinamicamente a partir do estado atual da blockchain — nenhum dado é armazenado em banco de dados centralizado.
               </p>
             </div>
@@ -303,8 +272,10 @@ export default function VerifyPage() {
         )}
       </main>
 
-      <footer className="bg-green-900 text-green-200 text-sm text-center py-4 mt-10">
-        GreenTrack · Verificação pública e imutável na blockchain Ethereum Sepolia
+      <footer style={{ background: "var(--color-gt-canopy)", padding: "24px", textAlign: "center" }}>
+        <p className="gt-caption" style={{ color: "var(--color-gt-on-dark-mute)" }}>
+          GreenTrack · Verificação pública e imutável na blockchain Ethereum Sepolia
+        </p>
       </footer>
     </div>
   );
@@ -312,19 +283,17 @@ export default function VerifyPage() {
 
 function Row({ label, value, mono, bold, green, link }) {
   const content = (
-    <span className={`${mono ? "font-mono" : ""} ${bold ? "font-bold" : ""} ${green ? "text-green-700" : "text-gray-700"} break-all`}>
+    <span style={{ fontFamily: mono ? "monospace" : "inherit", fontWeight: bold ? 700 : 400, color: green ? "var(--color-gt-forest)" : "var(--color-gt-ink)", wordBreak: "break-all", fontSize: "0.875rem" }}>
       {value}
     </span>
   );
   return (
-    <div className="flex items-start justify-between gap-4 py-1.5 border-b border-gray-50 last:border-0">
-      <span className="text-gray-400 text-xs whitespace-nowrap shrink-0">{label}</span>
+    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, padding: "7px 0", borderBottom: "1px solid var(--color-gt-hairline)" }}>
+      <span className="gt-micro" style={{ color: "var(--color-gt-ink-faint)", whiteSpace: "nowrap", flexShrink: 0 }}>{label}</span>
       {link ? (
-        <a href={link} target="_blank" rel="noopener noreferrer" className="hover:text-green-600 transition-colors text-right">
-          {content}
-        </a>
+        <a href={link} target="_blank" rel="noopener noreferrer" className="gt-link" style={{ textAlign: "right", textDecoration: "none" }}>{content}</a>
       ) : (
-        <div className="text-right">{content}</div>
+        <div style={{ textAlign: "right" }}>{content}</div>
       )}
     </div>
   );
@@ -332,17 +301,15 @@ function Row({ label, value, mono, bold, green, link }) {
 
 function InfoRow({ label, value, mono, link }) {
   const content = (
-    <span className={`${mono ? "font-mono" : ""} text-gray-700 break-all`}>{value}</span>
+    <span style={{ fontFamily: mono ? "monospace" : "inherit", color: "var(--color-gt-ink)", wordBreak: "break-all", fontSize: "0.75rem" }}>{value}</span>
   );
   return (
-    <div className="bg-gray-50 rounded-xl p-3">
-      <p className="text-gray-400 text-xs mb-0.5">{label}</p>
+    <div style={{ background: "var(--color-gt-canvas-soft)", borderRadius: "var(--radius-gt-md)", padding: 12 }}>
+      <p className="gt-micro" style={{ color: "var(--color-gt-ink-faint)", marginBottom: 2 }}>{label}</p>
       {link ? (
-        <a href={link} target="_blank" rel="noopener noreferrer" className="text-xs hover:text-green-600 transition-colors">
-          {content}
-        </a>
+        <a href={link} target="_blank" rel="noopener noreferrer" className="gt-link" style={{ fontSize: "0.75rem" }}>{content}</a>
       ) : (
-        <p className="text-xs">{content}</p>
+        <p>{content}</p>
       )}
     </div>
   );

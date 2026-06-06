@@ -6,6 +6,7 @@ import Link from "next/link";
 import SealCard from "../../../components/SealCard";
 import QRDisplay from "../../../components/QRDisplay";
 import { getLedgerReadOnly, getSealReadOnly } from "../../../utils/contract";
+import { TopNav, Reveal, Loader, Notice } from "../../../components/ui";
 
 export default function EmpresaPage() {
   const { id: empresaId } = useParams();
@@ -52,80 +53,59 @@ export default function EmpresaPage() {
   }, [empresaId]);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
-      <header className="bg-green-700 text-white shadow-md">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80">
-            <span className="text-2xl">🌿</span>
-            <span className="text-xl font-extrabold tracking-tight">GreenTrack</span>
-          </Link>
-          <span className="text-green-200 text-sm font-medium">Certificado de Impacto</span>
-        </div>
-      </header>
+    <div className="flex flex-col min-h-screen" style={{ background: "var(--color-gt-canvas-soft)" }}>
+      <TopNav
+        maxWidth={1080}
+        right={<span className="gt-caption" style={{ color: "var(--color-gt-on-dark-mute)" }}>Certificado de Impacto</span>}
+      />
 
-      <main className="flex-1 max-w-5xl mx-auto px-6 py-12 w-full">
-        <div className="mb-6">
-          <h1 className="text-3xl font-extrabold text-gray-800">Impacto Ambiental</h1>
-          <p className="text-gray-500 text-sm mt-1 font-mono break-all">{empresaId}</p>
-        </div>
+      <main style={{ flex: 1, maxWidth: 1080, margin: "0 auto", padding: "48px 24px", width: "100%" }}>
+        <Reveal style={{ marginBottom: 32 }}>
+          <h1 className="gt-display-xl" style={{ color: "var(--color-gt-ink)" }}>Impacto Ambiental</h1>
+          <p className="gt-caption" style={{ color: "var(--color-gt-ink-mute)", marginTop: 4, fontFamily: "monospace", wordBreak: "break-all" }}>{empresaId}</p>
+        </Reveal>
 
-        {erro && (
-          <div className="bg-red-50 border border-red-300 text-red-700 rounded-xl px-4 py-3 mb-6 text-sm">
-            {erro}
-          </div>
-        )}
+        {erro && <div style={{ marginBottom: 24 }}><Notice tone="error">{erro}</Notice></div>}
 
         {loading ? (
-          <p className="text-gray-400">Carregando dados da blockchain...</p>
+          <Loader />
         ) : dados ? (
-          <div className="flex flex-col lg:flex-row gap-8 items-start">
-            <div className="flex flex-col gap-6">
-              <SealCard
-                empresaId={empresaId}
-                totalKg={dados.totalKg}
-                totalPesagens={dados.totalPesagens}
-                selosEmitidos={dados.selosEmitidos}
-              />
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 32, alignItems: "flex-start" }}>
+            <Reveal style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              <SealCard empresaId={empresaId} totalKg={dados.totalKg} totalPesagens={dados.totalPesagens} selosEmitidos={dados.selosEmitidos} />
               <QRDisplay empresaId={empresaId} />
-            </div>
+            </Reveal>
 
-            {/* Histórico de pesagens validadas */}
-            <div className="flex-1 bg-white rounded-2xl shadow p-6 border border-gray-100">
-              <h2 className="text-lg font-bold text-gray-700 mb-4">
+            <Reveal delay={120} className="gt-card" style={{ flex: 1, minWidth: 280, padding: 24 }}>
+              <h2 className="gt-display-md" style={{ color: "var(--color-gt-ink)", marginBottom: 16 }}>
                 Pesagens Validadas ({dados.pesagens.length})
               </h2>
               {dados.pesagens.length === 0 ? (
-                <p className="text-gray-400 text-sm">Nenhuma pesagem validada ainda.</p>
+                <p className="gt-caption" style={{ color: "var(--color-gt-ink-faint)" }}>Nenhuma pesagem validada ainda.</p>
               ) : (
-                <div className="flex flex-col gap-3">
+                <div style={{ display: "flex", flexDirection: "column" }}>
                   {dados.pesagens.map((p) => (
-                    <div
-                      key={p.id}
-                      className="flex items-center justify-between border-b border-gray-50 pb-2"
-                    >
+                    <div key={p.id} className="gt-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid var(--color-gt-hairline)", padding: "10px 0" }}>
                       <div>
-                        <span className="font-semibold text-gray-700 text-sm">#{p.id} — {p.material}</span>
-                        <p className="text-xs text-gray-400">
-                          {new Date(p.timestamp * 1000).toLocaleDateString("pt-BR")}
-                        </p>
+                        <span className="gt-body-md" style={{ fontWeight: 600, color: "var(--color-gt-ink)" }}>#{p.id} — {p.material}</span>
+                        <p className="gt-micro" style={{ color: "var(--color-gt-ink-faint)" }}>{new Date(p.timestamp * 1000).toLocaleDateString("pt-BR")}</p>
                       </div>
-                      <span className="text-green-700 font-bold text-sm">{p.pesoKg} kg</span>
+                      <span style={{ color: "var(--color-gt-forest)", fontWeight: 700, fontSize: "0.875rem" }}>{p.pesoKg} kg</span>
                     </div>
                   ))}
                 </div>
               )}
-            </div>
+            </Reveal>
           </div>
         ) : (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-6 text-center">
-            <p className="text-yellow-700 text-sm">Empresa não encontrada ou sem dados registrados.</p>
-          </div>
+          <Notice tone="pending">Empresa não encontrada ou sem dados registrados.</Notice>
         )}
       </main>
 
-      <footer className="bg-green-900 text-green-200 text-sm text-center py-4">
-        GreenTrack · Verificação pública e imutável na blockchain
+      <footer style={{ background: "var(--color-gt-canopy)", padding: "24px", textAlign: "center" }}>
+        <p className="gt-caption" style={{ color: "var(--color-gt-on-dark-mute)" }}>
+          GreenTrack · Verificação pública e imutável na blockchain
+        </p>
       </footer>
     </div>
   );
