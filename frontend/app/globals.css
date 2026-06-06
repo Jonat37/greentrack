@@ -1,26 +1,168 @@
 @import "tailwindcss";
 
+/* ── Design tokens — GreenTrack adaptation of Superhumon system ─────────── */
+/* Three-canvas: forest-dark → white → canopy-dark                           */
+@theme {
+  /* Brand greens */
+  --color-gt-forest:        #0e2118;   /* hero / nav canvas — deep forest     */
+  --color-gt-forest-deep:   #07140d;   /* pressed / gradient depth            */
+  --color-gt-leaf-soft:     #9fdfba;   /* hero pill CTA fill — light mint     */
+  --color-gt-canopy:        #0a2110;   /* closing CTA band — darkest green    */
+  --color-gt-canopy-mid:    #134a22;   /* nested chrome inside canopy band    */
+
+  /* Ink */
+  --color-gt-ink:           #1d2820;   /* body text — warm dark, never #000   */
+  --color-gt-ink-mute:      #586158;   /* secondary / captions                */
+  --color-gt-ink-faint:     #8a918a;   /* tertiary / disabled                 */
+
+  /* Canvas */
+  --color-gt-canvas-soft:   #f6faf7;   /* alternating feature rows            */
+
+  /* Borders */
+  --color-gt-hairline:      #d8e5dc;   /* 1px borders on light surfaces       */
+  --color-gt-hairline-dark: #2a4535;   /* 1px borders on dark surfaces        */
+
+  /* On-dark text */
+  --color-gt-on-dark-mute:  #7eb895;   /* secondary on dark hero/canopy       */
+  --color-gt-on-dark-faint: #3e6b4c;   /* tertiary on dark                    */
+
+  /* Radius tokens */
+  --radius-gt-xs:  4px;
+  --radius-gt-sm:  6px;
+  --radius-gt-md:  8px;
+  --radius-gt-lg:  12px;
+  --radius-gt-xl:  16px;
+}
+
+/* ── Base ────────────────────────────────────────────────────────────────── */
 :root {
   --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --foreground: #1d2820;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+/* ── Typography helpers (editorial density matching DESIGN.md) ───────────── */
+.gt-display-xxl {
+  font-size: clamp(2.25rem, 5vw, 4rem);
+  font-weight: 560;
+  line-height: 0.97;
+  letter-spacing: -0.02em;
+}
+
+.gt-display-xl {
+  font-size: clamp(1.75rem, 3.5vw, 3rem);
+  font-weight: 480;
+  line-height: 0.97;
+  letter-spacing: -0.027em;
+}
+
+.gt-display-lg {
+  font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+  font-weight: 560;
+  line-height: 1.14;
+  letter-spacing: -0.022em;
+}
+
+.gt-display-md {
+  font-size: 1.375rem;
+  font-weight: 480;
+  line-height: 1.1;
+  letter-spacing: -0.014em;
+}
+
+.gt-body-lg {
+  font-size: 1.125rem;
+  font-weight: 540;
+  line-height: 1.5;
+  letter-spacing: -0.007em;
+}
+
+.gt-body-md {
+  font-size: 1rem;
+  font-weight: 460;
+  line-height: 1.5;
+}
+
+.gt-caption {
+  font-size: 0.875rem;
+  font-weight: 460;
+  line-height: 1.4;
+}
+
+.gt-micro {
+  font-size: 0.75rem;
+  font-weight: 540;
+  line-height: 1.4;
+}
+
+/* ── Button primitives ───────────────────────────────────────────────────── */
+.btn-forest {
+  background-color: var(--color-gt-forest);
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 12px 20px;
+  border-radius: var(--radius-gt-md);
+  transition: background-color 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-forest:hover { background-color: var(--color-gt-forest-deep); }
+
+.btn-pill-hero {
+  background-color: var(--color-gt-leaf-soft);
+  color: var(--color-gt-forest);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 13px 22px;
+  border-radius: 9999px;
+  transition: filter 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-pill-hero:hover { filter: brightness(0.95); }
+
+.btn-outline-dark {
+  background-color: transparent;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 12px 22px;
+  border-radius: var(--radius-gt-md);
+  border: 1.5px solid var(--color-gt-hairline-dark);
+  transition: border-color 0.15s, background-color 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-outline-dark:hover {
+  border-color: var(--color-gt-on-dark-mute);
+  background-color: rgba(255,255,255,0.05);
+}
+
+.btn-on-canopy {
+  background-color: #ffffff;
+  color: var(--color-gt-canopy);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 13px 22px;
+  border-radius: var(--radius-gt-md);
+  transition: filter 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-on-canopy:hover { filter: brightness(0.96); }
