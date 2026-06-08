@@ -8,6 +8,41 @@ const RPC_URL        = process.env.NEXT_PUBLIC_RPC_URL;
 const SEPOLIA_CHAIN_ID = "0xaa36a7";
 const SEPOLIA_CHAIN_ID_NUM = 11155111;
 
+// Bloco de criação dos contratos do Deploy #3 (2026-06-04). Piso da varredura
+// de eventos — evita varrer a chain desde o genesis. Configurável por env.
+export const DEPLOY_BLOCK = Number(process.env.NEXT_PUBLIC_DEPLOY_BLOCK) || 10989000;
+
+// Tamanho de chunk para o fallback em provedores que limitam o range de
+// eth_getLogs (Infura não limita por range com filtro indexado, mas outros sim).
+const LOG_CHUNK = 9000;
+
+/**
+ * queryFilter robusto: varre de DEPLOY_BLOCK até o bloco atual, sem janela fixa.
+ * Use sempre com um filtro INDEXADO (ex.: filters.SeloEmitido(tokenId)) para
+ * que o conjunto de resultados seja pequeno. Tenta o range inteiro de uma vez
+ * (rápido no Infura) e, se o provedor recusar, pagina em chunks de LOG_CHUNK.
+ */
+export async function queryFilterRobust(contract, filter, toBlock) {
+  const provider = contract.runner?.provider;
+  const latest = toBlock ?? (await provider.getBlockNumber());
+
+  try {
+    return await contract.queryFilter(filter, DEPLOY_BLOCK, latest);
+  } catch {
+    const all = [];
+    for (let start = DEPLOY_BLOCK; start <= latest; start += LOG_CHUNK + 1) {
+      const end = Math.min(start + LOG_CHUNK, latest);
+      try {
+        const logs = await contract.queryFilter(filter, start, end);
+        if (logs.length) all.push(...logs);
+      } catch {
+        // chunk individual falhou — continua; melhor faltar 1 hash que quebrar tudo
+      }
+    }
+    return all;
+  }
+}
+
 function makeProvider() {
   return new ethers.JsonRpcProvider(RPC_URL, undefined, { batchMaxCount: 1, batchStallTime: 0 });
 }

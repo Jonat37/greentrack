@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { getLedgerReadOnly, getSealReadOnly, getVerifyUrl, getIPFSUrl, getEtherscanAddress, getEtherscanTx, getEtherscanToken } from "../../../../../utils/contract";
+import { getLedgerReadOnly, getSealReadOnly, getVerifyUrl, getEtherscanAddress, getEtherscanTx, getEtherscanToken, queryFilterRobust } from "../../../../../utils/contract";
 import { getIPFSUrl as ipfsUrl } from "../../../../../utils/ipfs";
 import QRDisplay from "../../../../../components/QRDisplay";
 import { TopNav, Reveal, Loader, Badge } from "../../../../../components/ui";
@@ -78,24 +78,28 @@ export default function VerifyPage() {
   async function buscarTxHashes(seal, ledger, tid, pesagemIds) {
     setTxLoading(true);
     try {
-      const provider    = seal.runner.provider;
-      const latest      = await provider.getBlockNumber();
-      const fromBlock   = Math.max(0, latest - 9000);
+      // Bloco atual buscado uma vez e reaproveitado em todas as varreduras.
+      const latest = await seal.runner.provider.getBlockNumber();
 
-      // Evento de mint do selo
-      const [sealEvents, regEvents, valEvents] = await Promise.all([
-        seal.queryFilter(seal.filters.SeloEmitido(BigInt(tid)), fromBlock).catch(() => []),
-        ledger.queryFilter(ledger.filters.PesagemRegistrada(), fromBlock).catch(() => []),
-        ledger.queryFilter(ledger.filters.PesagemValidada(),   fromBlock).catch(() => []),
-      ]);
-
+      // Mint do selo: filtro indexado por tokenId → resultado único, range completo.
+      const sealEvents = await queryFilterRobust(seal, seal.filters.SeloEmitido(BigInt(tid)), latest);
       const mintTxHash = sealEvents[0]?.transactionHash || null;
 
+      // Por pesagem: `id` é o 1º parâmetro indexado em ambos os eventos, então
+      // filtramos por id específico — cada varredura retorna 1 log, sem depender
+      // de janela de blocos. Atualiza a UI progressivamente.
       const pesagemTxs = {};
       for (const id of pesagemIds) {
-        const reg = regEvents.find((e) => Number(e.args?.id) === id)?.transactionHash || null;
-        const val = valEvents.find((e) => Number(e.args?.id) === id)?.transactionHash || null;
-        pesagemTxs[id] = { reg, val };
+        const [reg, val] = await Promise.all([
+          queryFilterRobust(ledger, ledger.filters.PesagemRegistrada(BigInt(id)), latest),
+          queryFilterRobust(ledger, ledger.filters.PesagemValidada(BigInt(id)), latest),
+        ]);
+        pesagemTxs[id] = {
+          reg: reg[0]?.transactionHash || null,
+          val: val[0]?.transactionHash || null,
+        };
+        setTxData({ mintTxHash, pesagemTxs: { ...pesagemTxs } });
+        await delay(80);
       }
 
       setTxData({ mintTxHash, pesagemTxs });
