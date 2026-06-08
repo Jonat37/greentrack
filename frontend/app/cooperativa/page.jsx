@@ -5,9 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useWallet } from "../../contexts/WalletContext";
 import { getLedgerReadOnly, getSealReadOnly, getVerifyUrl } from "../../utils/contract";
-import { getIPFSUrl } from "../../utils/ipfs";
 import QRDisplay from "../../components/QRDisplay";
 import { TopNav, AnimatedCounter, Reveal, Loader, Notice, Badge } from "../../components/ui";
+import { EvidenceLink } from "../../components/EvidenceModal";
 
 const STATUS_LABEL = ["PENDENTE", "VALIDADA", "REJEITADA"];
 const STATUS_TONE = ["pending", "ok", "error"];
@@ -169,7 +169,7 @@ export default function CooperativaPage() {
                             {p.auditor !== "0x0000000000000000000000000000000000000000" ? `${p.auditor.slice(0, 6)}...${p.auditor.slice(-4)}` : "—"}
                           </td>
                           <td style={{ padding: "12px 16px", textAlign: "center" }}>
-                            <a href={getIPFSUrl(p.ipfsHash)} target="_blank" rel="noopener noreferrer" className="gt-link" style={{ fontSize: "0.75rem" }}>Ver →</a>
+                            <EvidenceLink cid={p.ipfsHash} className="gt-link" style={{ fontSize: "0.75rem", padding: 0 }}>Ver →</EvidenceLink>
                           </td>
                         </tr>
                       ))}

@@ -7,6 +7,7 @@ import { getLedgerReadOnly, getSealReadOnly, getVerifyUrl, getIPFSUrl, getEthers
 import { getIPFSUrl as ipfsUrl } from "../../../../../utils/ipfs";
 import QRDisplay from "../../../../../components/QRDisplay";
 import { TopNav, Reveal, Loader, Badge } from "../../../../../components/ui";
+import { EvidenceLink } from "../../../../../components/EvidenceModal";
 
 const SEAL_ADDRESS   = process.env.NEXT_PUBLIC_CONTRACT_SEAL;
 const LEDGER_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_LEDGER;
@@ -234,7 +235,10 @@ export default function VerifyPage() {
                           <InfoRow label="Cooperativa" value={`${p.cooperativa.slice(0, 10)}...${p.cooperativa.slice(-6)}`} mono link={getEtherscanAddress(p.cooperativa)} />
                           <InfoRow label="Auditor" value={p.auditor !== "0x0000000000000000000000000000000000000000" ? `${p.auditor.slice(0, 10)}...${p.auditor.slice(-6)}` : "—"} mono link={p.auditor !== "0x0000000000000000000000000000000000000000" ? getEtherscanAddress(p.auditor) : null} />
                           <InfoRow label="CID IPFS" value={`${p.ipfsHash.slice(0, 20)}...`} link={ipfsUrl(p.ipfsHash)} />
-                          <InfoRow label="Evidências" value="Ver fotos no IPFS ↗" link={ipfsUrl(p.ipfsHash)} />
+                          <div style={{ background: "var(--color-gt-canvas-soft)", borderRadius: "var(--radius-gt-md)", padding: 12 }}>
+                            <p className="gt-micro" style={{ color: "var(--color-gt-ink-faint)", marginBottom: 2 }}>Evidências</p>
+                            <EvidenceLink cid={p.ipfsHash} className="gt-link" style={{ fontSize: "0.75rem", padding: 0 }}>Ver fotos →</EvidenceLink>
+                          </div>
                           {txLoading ? (
                             <InfoRow label="Tx Registro" value="Buscando..." />
                           ) : txs?.reg ? (

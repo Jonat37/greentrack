@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useWallet } from "../../contexts/WalletContext";
 import { getLedgerReadOnly, getLedgerSigner, conectarCarteira } from "../../utils/contract";
-import { getIPFSUrl } from "../../utils/ipfs";
 import { TopNav, Reveal, Loader, Notice, Badge } from "../../components/ui";
+import { EvidenceLink } from "../../components/EvidenceModal";
 
 export default function AuditorPage() {
   const { address, roles, loaded } = useWallet();
@@ -141,9 +141,9 @@ export default function AuditorPage() {
                       <p><span style={{ color: "var(--color-gt-ink-faint)" }}>Cooperativa:</span> <span style={{ fontFamily: "monospace", fontSize: "0.75rem" }}>{p.cooperativa.slice(0, 8)}...{p.cooperativa.slice(-4)}</span></p>
                       <p><span style={{ color: "var(--color-gt-ink-faint)" }}>Registrada:</span> {new Date(p.timestamp * 1000).toLocaleDateString("pt-BR")}</p>
                     </div>
-                    <a href={getIPFSUrl(p.ipfsHash)} target="_blank" rel="noopener noreferrer" className="gt-link" style={{ fontSize: "0.75rem", marginTop: 8, display: "inline-block" }}>
-                      Ver evidências no IPFS →
-                    </a>
+                    <EvidenceLink cid={p.ipfsHash} className="gt-link" style={{ fontSize: "0.75rem", marginTop: 8, display: "inline-block", padding: 0 }}>
+                      Ver fotos das evidências →
+                    </EvidenceLink>
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
                     <button onClick={() => validar(p.id)} disabled={txLoading === p.id} className="btn-forest" style={{ fontSize: "0.875rem", padding: "9px 18px", opacity: txLoading === p.id ? 0.6 : 1 }}>
