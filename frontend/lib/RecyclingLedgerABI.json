@@ -189,9 +189,40 @@
         "type": "uint256"
       },
       {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "pesoReciclado",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "pesoRejeito",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "pesoPerda",
+        "type": "uint256"
+      }
+    ],
+    "name": "LoteProcessado",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
         "indexed": true,
         "internalType": "address",
-        "name": "cooperativa",
+        "name": "recicladora",
         "type": "address"
       },
       {
@@ -203,14 +234,8 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "pesoKg",
+        "name": "pesoEntrada",
         "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "string",
-        "name": "ipfsHash",
-        "type": "string"
       },
       {
         "indexed": false,
@@ -219,7 +244,7 @@
         "type": "string"
       }
     ],
-    "name": "PesagemRegistrada",
+    "name": "LoteRecebido",
     "type": "event"
   },
   {
@@ -244,7 +269,7 @@
         "type": "string"
       }
     ],
-    "name": "PesagemRejeitada",
+    "name": "LoteRejeitado",
     "type": "event"
   },
   {
@@ -263,7 +288,7 @@
         "type": "address"
       }
     ],
-    "name": "PesagemValidada",
+    "name": "LoteValidado",
     "type": "event"
   },
   {
@@ -654,6 +679,25 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "name": "entradaPorEmpresa",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "getEmpresas",
     "outputs": [
@@ -713,7 +757,7 @@
         "type": "address"
       }
     ],
-    "name": "getPesagensPorCooperativa",
+    "name": "getLotesPorCooperativa",
     "outputs": [
       {
         "internalType": "uint256[]",
@@ -732,7 +776,7 @@
         "type": "string"
       }
     ],
-    "name": "getPesagensPorEmpresa",
+    "name": "getLotesPorEmpresa",
     "outputs": [
       {
         "internalType": "uint256[]",
@@ -833,25 +877,6 @@
   {
     "inputs": [
       {
-        "internalType": "string",
-        "name": "",
-        "type": "string"
-      }
-    ],
-    "name": "kgPorEmpresa",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
@@ -914,7 +939,7 @@
         "type": "uint256"
       }
     ],
-    "name": "pesagens",
+    "name": "lotes",
     "outputs": [
       {
         "internalType": "uint256",
@@ -923,7 +948,7 @@
       },
       {
         "internalType": "address",
-        "name": "cooperativa",
+        "name": "recicladora",
         "type": "address"
       },
       {
@@ -933,21 +958,46 @@
       },
       {
         "internalType": "uint256",
-        "name": "pesoKg",
+        "name": "pesoEntrada",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "pesoReciclado",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "pesoRejeito",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "pesoPerda",
         "type": "uint256"
       },
       {
         "internalType": "string",
-        "name": "ipfsHash",
+        "name": "ipfsEntrada",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "ipfsProcesso",
         "type": "string"
       },
       {
         "internalType": "uint256",
-        "name": "timestamp",
+        "name": "recebidoEm",
         "type": "uint256"
       },
       {
-        "internalType": "enum RecyclingLedger.Status",
+        "internalType": "uint256",
+        "name": "processadoEm",
+        "type": "uint256"
+      },
+      {
+        "internalType": "enum RecyclingLedger.StatusLote",
         "name": "status",
         "type": "uint8"
       },
@@ -970,11 +1020,6 @@
         "internalType": "string",
         "name": "dataColeta",
         "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "observacao",
-        "type": "string"
       }
     ],
     "stateMutability": "view",
@@ -993,7 +1038,7 @@
         "type": "uint256"
       }
     ],
-    "name": "pesagensPorCooperativa",
+    "name": "lotesPorCooperativa",
     "outputs": [
       {
         "internalType": "uint256",
@@ -1017,7 +1062,26 @@
         "type": "uint256"
       }
     ],
-    "name": "pesagensPorEmpresa",
+    "name": "lotesPorEmpresa",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "name": "recicladoPorEmpresa",
     "outputs": [
       {
         "internalType": "uint256",
@@ -1037,17 +1101,17 @@
       },
       {
         "internalType": "uint256",
-        "name": "pesoKg",
+        "name": "pesoEntrada",
         "type": "uint256"
       },
       {
         "internalType": "string",
-        "name": "ipfsHash",
+        "name": "empresaId",
         "type": "string"
       },
       {
         "internalType": "string",
-        "name": "empresaId",
+        "name": "ipfsEntrada",
         "type": "string"
       },
       {
@@ -1059,14 +1123,37 @@
         "internalType": "string",
         "name": "dataColeta",
         "type": "string"
+      }
+    ],
+    "name": "registrarEntrada",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "pesoReciclado",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "pesoRejeito",
+        "type": "uint256"
       },
       {
         "internalType": "string",
-        "name": "observacao",
+        "name": "ipfsProcesso",
         "type": "string"
       }
     ],
-    "name": "registrarPesagem",
+    "name": "registrarProcessamento",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1097,7 +1184,7 @@
         "type": "string"
       }
     ],
-    "name": "rejeitarPesagem",
+    "name": "rejeitarLote",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1210,7 +1297,7 @@
   },
   {
     "inputs": [],
-    "name": "totalKgValidadoGlobal",
+    "name": "totalEntradaGlobal",
     "outputs": [
       {
         "internalType": "uint256",
@@ -1223,7 +1310,20 @@
   },
   {
     "inputs": [],
-    "name": "totalPesagens",
+    "name": "totalLotes",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalRecicladoGlobal",
     "outputs": [
       {
         "internalType": "uint256",
@@ -1242,7 +1342,7 @@
         "type": "uint256"
       }
     ],
-    "name": "validarPesagem",
+    "name": "validarLote",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

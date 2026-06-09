@@ -5,8 +5,8 @@
 
 **Rede:** Ethereum Sepolia (testnet · chainId `11155111`)
 **Contratos:**
-- RecyclingLedger — `0x602AE94DAbA2D99a0253c5e010a3d9dc77ACB616`
-- GreenSeal (ERC-721) — `0x46769676B561D5981F2569A57a4de5ABA78fD011`
+- RecyclingLedger — `0xd9496CEBb2C579185A15c8d6d98D5Da9dfD7BE90`
+- GreenSeal (ERC-721) — `0x373b2FAF5733B6e5A50f5BF09663Cf33DE73191F`
 
 ---
 
@@ -181,9 +181,16 @@ transações de registro e de validação. Da prova de marketing ao lastro on-ch
 ## Status do projeto
 
 - Contratos implantados e funcionais na Ethereum Sepolia
-- Frontend completo: landing, dashboard público, verificação por QR Code, painéis de
-  cooperativa/auditor/admin, cadastro e certificado de empresa
-- Evidências em IPFS via Pinata, com upload protegido por rota de servidor
+- **Balanço de massa por lote reconciliado on-chain** (entrada → reciclado + rejeito + perda):
+  o contrato recusa um processamento cujo balanço não fecha (`reciclado + rejeito ≤ entrada`),
+  e a métrica de impacto/selo é o material **efetivamente reciclado**, não o recebido
+- Fluxo de lote em duas fases (entrada e processamento) com separação de papéis: quem
+  registra ≠ quem valida
+- Frontend completo: landing, dashboard público (com taxa de reciclagem), verificação por
+  QR Code com a trilha completa do lote, painéis de recicladora/auditor/admin, cadastro e
+  certificado de empresa
+- Evidências em IPFS via Pinata (fotos de balança, saída e rejeito), com upload protegido
+  por rota de servidor
 - Documentação completa: `README.md`, `FUNCTIONALITIES.md`, `BUSINESS_RULES.md`,
   `CONTRACT_OVERVIEW.md`, `CONTRACT_FUNCTIONS.md`, `CONTRACT_SECURITY.md`, `DEPLOYMENTS.md`
   e 13 SPECs em `specs/`

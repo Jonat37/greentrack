@@ -8,9 +8,10 @@ const RPC_URL        = process.env.NEXT_PUBLIC_RPC_URL;
 const SEPOLIA_CHAIN_ID = "0xaa36a7";
 const SEPOLIA_CHAIN_ID_NUM = 11155111;
 
-// Bloco de criação dos contratos do Deploy #3 (2026-06-04). Piso da varredura
-// de eventos — evita varrer a chain desde o genesis. Configurável por env.
-export const DEPLOY_BLOCK = Number(process.env.NEXT_PUBLIC_DEPLOY_BLOCK) || 10989000;
+// Bloco de criação dos contratos do Deploy #4 (2026-06-09, modelo de Lote +
+// balanço de massa). Piso da varredura de eventos — evita varrer desde o
+// genesis. Configurável por env.
+export const DEPLOY_BLOCK = Number(process.env.NEXT_PUBLIC_DEPLOY_BLOCK) || 11018900;
 
 // Tamanho de chunk para o fallback em provedores que limitam o range de
 // eth_getLogs (Infura não limita por range com filtro indexado, mas outros sim).

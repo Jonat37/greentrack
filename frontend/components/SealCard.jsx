@@ -25,7 +25,7 @@ export default function SealCard({ empresaId, totalKg, totalPesagens, selosEmiti
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 20 }}>
           {[
             { value: totalKg, label: "kg reciclados", color: "var(--color-gt-forest)" },
-            { value: totalPesagens, label: "pesagens", color: "var(--color-gt-ink)" },
+            { value: totalPesagens, label: "lotes", color: "var(--color-gt-ink)" },
             { value: selosEmitidos, label: "selos emitidos", color: "var(--color-gt-forest)" },
           ].map((m) => (
             <div key={m.label} style={{ textAlign: "center" }}>

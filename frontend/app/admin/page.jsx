@@ -27,7 +27,7 @@ export default function AdminPage() {
   const { address, roles, loaded } = useWallet();
   const router = useRouter();
   const [aba, setAba] = useState("auditores");
-  const [metricas, setMetricas] = useState({ totalCoops: 0, auditoresAprovados: 0, auditoresPendentes: 0, totalAuditores: 0, totalPesagens: 0, totalKg: 0, totalSelos: 0, kgParaSelo: 1000 });
+  const [metricas, setMetricas] = useState({ totalCoops: 0, auditoresAprovados: 0, auditoresPendentes: 0, totalAuditores: 0, totalLotes: 0, totalKg: 0, totalSelos: 0, kgParaSelo: 1000 });
   const [auditores, setAuditores] = useState([]);
   const [cooperativas, setCooperativas] = useState([]);
   const [empresas, setEmpresas] = useState([]);
@@ -51,9 +51,9 @@ export default function AdminPage() {
     try {
       const ledger = getLedgerReadOnly();
       const seal = getSealReadOnly();
-      const totalPesagens = await ledger.totalPesagens();
+      const totalLotes = await ledger.totalLotes();
       await delay(100);
-      const totalKg = await ledger.totalKgValidadoGlobal();
+      const totalKg = await ledger.totalRecicladoGlobal();
       await delay(100);
       const nextTokenId = await seal.nextTokenId();
       await delay(100);
@@ -86,7 +86,7 @@ export default function AdminPage() {
       }));
 
       setMetricas({
-        totalPesagens: Number(totalPesagens),
+        totalLotes: Number(totalLotes),
         totalKg: Number(totalKg),
         totalSelos: Number(nextTokenId),
         kgParaSelo: Number(kgParaSelo),
@@ -159,8 +159,8 @@ export default function AdminPage() {
                 { label: "Cooperativas", value: metricas.totalCoops },
                 { label: "Auditores aprovados", value: metricas.auditoresAprovados },
                 { label: "Auditores pendentes", value: metricas.auditoresPendentes },
-                { label: "Pesagens registradas", value: metricas.totalPesagens },
-                { label: "Kg validados", value: metricas.totalKg, unit: "kg", accent: true },
+                { label: "Lotes registrados", value: metricas.totalLotes },
+                { label: "Kg reciclados", value: metricas.totalKg, unit: "kg", accent: true },
                 { label: "Selos emitidos", value: metricas.totalSelos },
                 { label: "Meta atual (kg/selo)", value: metricas.kgParaSelo, accent: true },
               ].map((m) => (

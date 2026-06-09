@@ -14,14 +14,16 @@ A proposta é construir uma solução baseada em blockchain capaz de **registrar
 
 ## Objetivo
 
-O **GreenTrack** registra pesagens de materiais recicláveis realizadas por cooperativas, permite que auditores aprovados validem os dados on-chain e emite automaticamente **NFTs Selos Verdes** (ERC-721) para empresas geradoras de resíduos a cada meta de kg reciclados validados.
+O **GreenTrack** registra lotes de materiais recicláveis processados por recicladoras com **balanço de massa reconciliado on-chain** (entrada → reciclado + rejeito + perda), permite que auditores aprovados validem os dados on-chain e emite automaticamente **NFTs Selos Verdes** (ERC-721) para empresas apoiadoras a cada meta de kg **reciclados** validados.
 
 ```
-Cooperativa  →  cadastrarCooperativa()  →  COOPERATIVA_ROLE automático
-Cooperativa  →  registrarPesagem()      →  IPFS (fotos + metadados) + blockchain
-Auditor      →  validarPesagem()        →  acumula kg on-chain por empresa
-Contrato     →  emitirSelo()            →  NFT ERC-721 automático ao atingir a meta
-ADM          →  aprovarAuditor()        →  governa papéis e regras da plataforma
+Recicladora  →  cadastrarCooperativa()      →  COOPERATIVA_ROLE automático
+Recicladora  →  registrarEntrada()          →  fase 1: pesa o recebido (RECEBIDO)
+Recicladora  →  registrarProcessamento()    →  fase 2: reciclado/rejeito; o contrato exige
+                                                reciclado + rejeito ≤ entrada (PROCESSADO)
+Auditor      →  validarLote()                →  acumula o RECICLADO on-chain por empresa
+Contrato     →  emitirSelo()                 →  NFT ERC-721 automático ao atingir a meta
+ADM          →  aprovarAuditor()             →  governa papéis e regras da plataforma
 ```
 
 ---
@@ -44,8 +46,8 @@ ADM          →  aprovarAuditor()        →  governa papéis e regras da plata
 
 | Contrato | Endereço |
 |---|---|
-| RecyclingLedger | `0x602AE94DAbA2D99a0253c5e010a3d9dc77ACB616` |
-| GreenSeal (ERC-721) | `0x46769676B561D5981F2569A57a4de5ABA78fD011` |
+| RecyclingLedger | `0xd9496CEBb2C579185A15c8d6d98D5Da9dfD7BE90` |
+| GreenSeal (ERC-721) | `0x373b2FAF5733B6e5A50f5BF09663Cf33DE73191F` |
 
 ---
 
@@ -215,21 +217,22 @@ Acesse `http://localhost:3000`
 | Role | Como obter | Permissões |
 |---|---|---|
 | `DEFAULT_ADMIN_ROLE` | Carteira que fez o deploy | Aprovar/rejeitar auditores, bloquear cooperativas, configurar meta de kg, cadastrar empresas apoiadoras |
-| `COOPERATIVA_ROLE` | Auto-cadastro em `/cadastro/cooperativa` | Registrar pesagens |
-| `AUDITOR_ROLE` | Solicitação aprovada pelo ADM | Validar e rejeitar pesagens |
+| `COOPERATIVA_ROLE` | Auto-cadastro em `/cadastro/cooperativa` | Registrar entrada e processamento de lotes |
+| `AUDITOR_ROLE` | Solicitação aprovada pelo ADM | Validar e rejeitar lotes |
 
 ---
 
 ## Fluxo completo de demonstração
 
 1. **ADM** acessa `/admin` e cadastra uma empresa apoiadora
-2. **Cooperativa** acessa `/cadastro/cooperativa`, conecta MetaMask e se registra
+2. **Recicladora** acessa `/cadastro/cooperativa`, conecta MetaMask e se registra
 3. **Auditor** acessa `/cadastro/auditor` e solicita acesso
 4. **ADM** aprova o auditor em `/admin`
-5. **Cooperativa** acessa `/cooperativa/pesagem` e registra uma pesagem com fotos
-6. **Auditor** acessa `/auditor` e valida a pesagem
-7. Ao atingir a meta de kg, o **Selo Verde NFT** é emitido automaticamente
-8. O certificado com QR Code fica disponível publicamente em `/empresa/[id]`
+5. **Recicladora** acessa `/cooperativa/pesagem` e registra a **entrada** do lote (fase 1, com foto da balança)
+6. **Recicladora** registra o **processamento** do lote (fase 2: reciclado/rejeito + fotos) — o contrato valida o balanço
+7. **Auditor** (carteira ≠ recicladora) acessa `/auditor` e valida o lote, conferindo o balanço de massa
+8. Ao atingir a meta de kg **reciclados**, o **Selo Verde NFT** é emitido automaticamente
+9. O certificado com QR Code e o balanço de massa ficam públicos em `/empresa/[id]` e `/verify/...`
 
 ---
 

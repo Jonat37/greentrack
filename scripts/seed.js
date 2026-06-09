@@ -12,8 +12,12 @@ async function main() {
   const deployments = JSON.parse(fs.readFileSync(deploymentsPath, "utf8"));
   console.log("📖 Lendo deployments:", deployments);
 
-  const [deployer] = await ethers.getSigners();
-  console.log("\n🔑 Usando conta:", deployer.address);
+  const signers = await ethers.getSigners();
+  const deployer = signers[0];          // recicladora (registra e processa)
+  const auditorSigner = signers[1];     // auditor (valida) — separação de papéis
+  console.log("\n🔑 Recicladora:", deployer.address);
+  if (auditorSigner) console.log("🔍 Auditor:", auditorSigner.address);
+  else console.log("⚠️  Sem 2º signer: lotes ficarão PROCESSADOS (validação exige auditor ≠ recicladora).");
 
   const ledger = await ethers.getContractAt("RecyclingLedger", deployments.RecyclingLedger, deployer);
   const seal = await ethers.getContractAt("GreenSeal", deployments.GreenSeal, deployer);
@@ -22,94 +26,91 @@ async function main() {
   const AUDITOR_ROLE = await ledger.AUDITOR_ROLE();
   const DEFAULT_ADMIN_ROLE = await ledger.DEFAULT_ADMIN_ROLE();
 
-  // Verificar se deployer tem admin role para conceder roles
-  const hasAdmin = await ledger.hasRole(DEFAULT_ADMIN_ROLE, deployer.address);
-  if (!hasAdmin) {
+  if (!(await ledger.hasRole(DEFAULT_ADMIN_ROLE, deployer.address))) {
     console.log("❌ Deployer não tem DEFAULT_ADMIN_ROLE. Abortando.");
     process.exit(1);
   }
 
-  // Conceder COOPERATIVA_ROLE se necessário
+  // Recicladora precisa de COOPERATIVA_ROLE
   if (!(await ledger.hasRole(COOPERATIVA_ROLE, deployer.address))) {
-    console.log("\n🔐 Concedendo COOPERATIVA_ROLE ao deployer...");
+    console.log("\n🔐 Concedendo COOPERATIVA_ROLE à recicladora...");
     await (await ledger.grantRole(COOPERATIVA_ROLE, deployer.address)).wait();
-    console.log("✅ COOPERATIVA_ROLE concedida");
-  } else {
-    console.log("✅ Deployer já tem COOPERATIVA_ROLE");
+  }
+  // Auditor (2º signer) precisa de AUDITOR_ROLE
+  const podeValidar = !!auditorSigner;
+  if (podeValidar && !(await ledger.hasRole(AUDITOR_ROLE, auditorSigner.address))) {
+    console.log("🔐 Concedendo AUDITOR_ROLE ao auditor...");
+    await (await ledger.grantRole(AUDITOR_ROLE, auditorSigner.address)).wait();
   }
 
-  // Conceder AUDITOR_ROLE se necessário
-  if (!(await ledger.hasRole(AUDITOR_ROLE, deployer.address))) {
-    console.log("\n🔐 Concedendo AUDITOR_ROLE ao deployer...");
-    await (await ledger.grantRole(AUDITOR_ROLE, deployer.address)).wait();
-    console.log("✅ AUDITOR_ROLE concedida");
-  } else {
-    console.log("✅ Deployer já tem AUDITOR_ROLE");
-  }
+  const empresaId = "EMPRESA_ESG_001";
 
-  // Dados das pesagens de demonstração
-  const pesagens = [
-    { material: "PET", pesoKg: 350, empresaId: "EMPRESA_ESG_001", ipfsHash: "QmPET001abc123" },
-    { material: "Alumínio", pesoKg: 200, empresaId: "EMPRESA_ESG_001", ipfsHash: "QmALU001abc123" },
-    { material: "Papelão", pesoKg: 500, empresaId: "EMPRESA_ESG_001", ipfsHash: "QmPAP001abc123" },
+  // Lotes de demonstração: entrada → (reciclado, rejeito) → perda derivada
+  const lotes = [
+    { material: "PET", entrada: 500, reciclado: 420, rejeito: 50, ipfsEntrada: "QmPETin", ipfsProc: "QmPETproc" },
+    { material: "Alumínio", entrada: 300, reciclado: 270, rejeito: 20, ipfsEntrada: "QmALUin", ipfsProc: "QmALUproc" },
+    { material: "Papelão", entrada: 600, reciclado: 510, rejeito: 60, ipfsEntrada: "QmPAPin", ipfsProc: "QmPAPproc" },
   ];
 
   const ids = [];
-
-  // Registrar pesagens
-  console.log("\n📝 Registrando pesagens...");
-  for (const p of pesagens) {
+  console.log("\n📝 Registrando entradas + processamentos...");
+  for (const l of lotes) {
     try {
-      const tx = await ledger.registrarPesagem(p.material, p.pesoKg, p.ipfsHash, p.empresaId);
-      const receipt = await tx.wait();
-      const totalPesagens = await ledger.totalPesagens();
-      ids.push(Number(totalPesagens));
-      console.log(`✅ Pesagem registrada: ${p.material} ${p.pesoKg}kg → ID #${totalPesagens}`);
+      await (await ledger.registrarEntrada(l.material, l.entrada, empresaId, l.ipfsEntrada, "Galpão Central SP", "2026-06-08")).wait();
+      const id = Number(await ledger.totalLotes());
+      ids.push(id);
+      await (await ledger.registrarProcessamento(id, l.reciclado, l.rejeito, l.ipfsProc)).wait();
+      const perda = l.entrada - l.reciclado - l.rejeito;
+      console.log(`✅ Lote #${id}: ${l.material} ${l.entrada}kg → reciclado ${l.reciclado}, rejeito ${l.rejeito}, perda ${perda}`);
     } catch (e) {
-      console.log(`❌ Erro ao registrar ${p.material}:`, e.message);
+      console.log(`❌ Erro no lote ${l.material}:`, e.message);
     }
   }
 
-  // Validar pesagens
-  console.log("\n🔍 Validando pesagens...");
-  for (const id of ids) {
-    try {
-      const tx = await ledger.validarPesagem(id);
-      await tx.wait();
-      console.log(`✅ Pesagem #${id} validada`);
-    } catch (e) {
-      console.log(`❌ Erro ao validar #${id}:`, e.message);
+  if (podeValidar) {
+    console.log("\n🔍 Validando lotes (auditor)...");
+    const ledgerAuditor = ledger.connect(auditorSigner);
+    for (const id of ids) {
+      try {
+        await (await ledgerAuditor.validarLote(id)).wait();
+        console.log(`✅ Lote #${id} validado`);
+      } catch (e) {
+        console.log(`❌ Erro ao validar #${id}:`, e.message);
+      }
     }
+  } else {
+    console.log("\n⏭️  Pulando validação (forneça um 2º signer/auditor financiado para validar e emitir selo).");
   }
 
-  // Resultado final
-  const totalKg = await ledger.kgPorEmpresa("EMPRESA_ESG_001");
-  const totalSelos = await seal.totalSelosPorEmpresa("EMPRESA_ESG_001");
-  const totalPesagens = await ledger.totalPesagens();
-  const totalKgGlobal = await ledger.totalKgValidadoGlobal();
+  // Resultado
+  const reciclado = await ledger.recicladoPorEmpresa(empresaId);
+  const entrada = await ledger.entradaPorEmpresa(empresaId);
+  const totalSelos = await seal.totalSelosPorEmpresa(empresaId);
+  const totalLotes = await ledger.totalLotes();
+  const recGlobal = await ledger.totalRecicladoGlobal();
 
   console.log("\n─────────────────────────────────────");
   console.log("📊 Resultado Final:");
-  console.log(`   Total de pesagens registradas: ${totalPesagens}`);
-  console.log(`   Total de kg validados (EMPRESA_ESG_001): ${totalKg} kg`);
-  console.log(`   Total de kg validados (global): ${totalKgGlobal} kg`);
-  console.log(`   Total de Selos Verdes emitidos: ${totalSelos}`);
+  console.log(`   Total de lotes: ${totalLotes}`);
+  console.log(`   Entrada validada (${empresaId}): ${entrada} kg`);
+  console.log(`   Reciclado validado (${empresaId}): ${reciclado} kg`);
+  if (entrada > 0n) console.log(`   Taxa de reciclagem: ${(Number(reciclado) / Number(entrada) * 100).toFixed(1)}%`);
+  console.log(`   Reciclado global: ${recGlobal} kg`);
+  console.log(`   Selos Verdes emitidos: ${totalSelos}`);
   console.log("─────────────────────────────────────");
 
-  // Validações finais
-  if (totalKg.toString() !== "1050") {
-    throw new Error(`Total de kg incorreto: esperado 1050, obtido ${totalKg}`);
+  // Validações condicionais — só checam estado pós-validação quando houve auditor
+  if (podeValidar) {
+    if (reciclado.toString() !== "1200") {
+      throw new Error(`Reciclado incorreto: esperado 1200, obtido ${reciclado}`);
+    }
+    if (totalSelos.toString() !== "1") {
+      throw new Error(`Selos incorretos: esperado 1, obtido ${totalSelos}`);
+    }
+    console.log("\n✅ Todas as validações passaram com sucesso!");
+  } else {
+    console.log("\n✅ Lotes semeados em estado PROCESSADO. Valide via UI com uma carteira de auditor aprovada.");
   }
-
-  if (totalSelos.toString() !== "1") {
-    throw new Error(`Selos incorretos: esperado 1, obtido ${totalSelos}`);
-  }
-
-  if (totalKgGlobal.toString() !== "1050") {
-    throw new Error(`Total global de kg incorreto: esperado 1050, obtido ${totalKgGlobal}`);
-  }
-
-  console.log("\n✅ Todas as validações passaram com sucesso!");
 }
 
 main()

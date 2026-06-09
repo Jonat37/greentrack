@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { getLedgerReadOnly, getSealReadOnly, getVerifyUrl, getEtherscanAddress, getEtherscanTx, getEtherscanToken, queryFilterRobust } from "../../../../../utils/contract";
-import { getIPFSUrl as ipfsUrl } from "../../../../../utils/ipfs";
 import QRDisplay from "../../../../../components/QRDisplay";
 import { TopNav, Reveal, Loader, Badge } from "../../../../../components/ui";
 import { EvidenceLink } from "../../../../../components/EvidenceModal";
@@ -18,8 +17,8 @@ export default function VerifyPage() {
   const { chainId, contractAddress, tokenId } = useParams();
 
   const [selo,    setSelo]    = useState(null);
-  const [pesagens, setPesagens] = useState([]);
-  const [txData,  setTxData]  = useState({});   // { mintTxHash, pesagemTxs: { id: { reg, val } } }
+  const [lotes,   setLotes]   = useState([]);
+  const [txData,  setTxData]  = useState({});   // { mintTxHash, loteTxs: { id: { reg, proc, val } } }
   const [loading, setLoading] = useState(true);
   const [txLoading, setTxLoading] = useState(false);
   const [erro,    setErro]    = useState("");
@@ -47,27 +46,31 @@ export default function VerifyPage() {
 
       setSelo({ tokenId: tokenIdNum, empresaId, totalKg });
 
-      const pesagemIds = await ledger.getPesagensPorEmpresa(empresaId); await delay(120);
+      const loteIds = await ledger.getLotesPorEmpresa(empresaId); await delay(120);
 
       const lista = [];
-      for (const id of pesagemIds) {
-        const p = await ledger.pesagens(Number(id));
+      for (const id of loteIds) {
+        const l = await ledger.lotes(Number(id));
         lista.push({
-          id:          Number(p.id),
-          material:    p.material,
-          pesoKg:      Number(p.pesoKg),
-          cooperativa: p.cooperativa,
-          auditor:     p.auditor,
-          ipfsHash:    p.ipfsHash,
-          timestamp:   Number(p.timestamp),
-          empresaId:   p.empresaId,
+          id:            Number(l.id),
+          material:      l.material,
+          pesoEntrada:   Number(l.pesoEntrada),
+          pesoReciclado: Number(l.pesoReciclado),
+          pesoRejeito:   Number(l.pesoRejeito),
+          pesoPerda:     Number(l.pesoPerda),
+          recicladora:   l.recicladora,
+          auditor:       l.auditor,
+          ipfsEntrada:   l.ipfsEntrada,
+          ipfsProcesso:  l.ipfsProcesso,
+          timestamp:     Number(l.processadoEm || l.recebidoEm),
+          empresaId:     l.empresaId,
         });
         await delay(100);
       }
-      setPesagens(lista);
+      setLotes(lista);
 
       // Tenta buscar hashes de transações via eventos
-      buscarTxHashes(seal, ledger, tokenIdNum, lista.map((p) => p.id));
+      buscarTxHashes(seal, ledger, tokenIdNum, lista.map((l) => l.id));
     } catch (e) {
       setErro("Erro ao carregar dados: " + e.message);
     } finally {
@@ -75,7 +78,7 @@ export default function VerifyPage() {
     }
   }
 
-  async function buscarTxHashes(seal, ledger, tid, pesagemIds) {
+  async function buscarTxHashes(seal, ledger, tid, loteIds) {
     setTxLoading(true);
     try {
       // Bloco atual buscado uma vez e reaproveitado em todas as varreduras.
@@ -85,24 +88,26 @@ export default function VerifyPage() {
       const sealEvents = await queryFilterRobust(seal, seal.filters.SeloEmitido(BigInt(tid)), latest);
       const mintTxHash = sealEvents[0]?.transactionHash || null;
 
-      // Por pesagem: `id` é o 1º parâmetro indexado em ambos os eventos, então
+      // Por lote: `id` é o 1º parâmetro indexado nos 3 eventos do ciclo, então
       // filtramos por id específico — cada varredura retorna 1 log, sem depender
       // de janela de blocos. Atualiza a UI progressivamente.
-      const pesagemTxs = {};
-      for (const id of pesagemIds) {
-        const [reg, val] = await Promise.all([
-          queryFilterRobust(ledger, ledger.filters.PesagemRegistrada(BigInt(id)), latest),
-          queryFilterRobust(ledger, ledger.filters.PesagemValidada(BigInt(id)), latest),
+      const loteTxs = {};
+      for (const id of loteIds) {
+        const [reg, proc, val] = await Promise.all([
+          queryFilterRobust(ledger, ledger.filters.LoteRecebido(BigInt(id)), latest),
+          queryFilterRobust(ledger, ledger.filters.LoteProcessado(BigInt(id)), latest),
+          queryFilterRobust(ledger, ledger.filters.LoteValidado(BigInt(id)), latest),
         ]);
-        pesagemTxs[id] = {
+        loteTxs[id] = {
           reg: reg[0]?.transactionHash || null,
+          proc: proc[0]?.transactionHash || null,
           val: val[0]?.transactionHash || null,
         };
-        setTxData({ mintTxHash, pesagemTxs: { ...pesagemTxs } });
+        setTxData({ mintTxHash, loteTxs: { ...loteTxs } });
         await delay(80);
       }
 
-      setTxData({ mintTxHash, pesagemTxs });
+      setTxData({ mintTxHash, loteTxs });
     } catch {
       // Silencioso — exibe links do Etherscan como fallback
     } finally {
@@ -111,8 +116,8 @@ export default function VerifyPage() {
   }
 
   const verifyUrl  = getVerifyUrl(tokenIdNum);
-  const materials  = [...new Set(pesagens.map((p) => p.material).filter(Boolean))];
-  const cooperativas = [...new Set(pesagens.map((p) => p.cooperativa))];
+  const materials  = [...new Set(lotes.map((l) => l.material).filter(Boolean))];
+  const cooperativas = [...new Set(lotes.map((l) => l.recicladora))];
 
   if (!isValidChain || !isValidContract) {
     return (
@@ -155,7 +160,7 @@ export default function VerifyPage() {
                 <div className="gt-card" style={{ padding: 20, display: "flex", flexDirection: "column", gap: 2 }}>
                   <Row label="Token ID" value={`#${selo.tokenId}`} mono />
                   <Row label="Empresa" value={selo.empresaId} mono />
-                  <Row label="Kg certificados" value={`${selo.totalKg.toLocaleString("pt-BR")} kg`} bold green />
+                  <Row label="Kg reciclados" value={`${selo.totalKg.toLocaleString("pt-BR")} kg`} bold green />
                   <Row label="Material(is)" value={materials.join(", ") || "—"} />
                   <Row label="Rede" value="Ethereum Sepolia (11155111)" />
                   <Row label="Contrato GreenSeal" value={SEAL_ADDRESS} mono link={getEtherscanAddress(SEAL_ADDRESS)} />
@@ -169,9 +174,9 @@ export default function VerifyPage() {
                   )}
                 </div>
 
-                {/* Cooperativas envolvidas */}
+                {/* Recicladoras envolvidas */}
                 <div className="gt-card" style={{ marginTop: 16, padding: 20 }}>
-                  <p className="gt-micro" style={{ fontWeight: 700, color: "var(--color-gt-ink-mute)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>Cooperativas envolvidas</p>
+                  <p className="gt-micro" style={{ fontWeight: 700, color: "var(--color-gt-ink-mute)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>Recicladoras envolvidas</p>
                   {cooperativas.map((c) => (
                     <div key={c} style={{ marginBottom: 6 }}>
                       <a href={getEtherscanAddress(c)} target="_blank" rel="noopener noreferrer" className="gt-link" style={{ fontFamily: "monospace", fontSize: "0.875rem" }}>
@@ -196,67 +201,69 @@ export default function VerifyPage() {
 
             {/* ── Bloco On-chain vs Off-chain ──────────────────────────────── */}
             <Reveal style={{ background: "var(--color-gt-forest)", borderRadius: "var(--radius-gt-lg)", padding: 24, marginBottom: 40 }}>
-              <h2 className="gt-display-md" style={{ color: "var(--color-gt-leaf-soft)", marginBottom: 8 }}>On-chain vs Off-chain</h2>
+              <h2 className="gt-display-md" style={{ color: "var(--color-gt-leaf-soft)", marginBottom: 8 }}>Balanço de massa on-chain</h2>
               <p className="gt-body-md" style={{ color: "var(--color-gt-on-dark-mute)" }}>
-                Os dados críticos do impacto ficam <strong style={{ color: "#fff" }}>on-chain</strong>: peso em kg, tipo de material, endereço da cooperativa, auditor responsável, status da pesagem, CID IPFS e NFT emitido. As evidências físicas, como fotos do tíquete da balança e dos fardos, ficam <strong style={{ color: "#fff" }}>off-chain no IPFS</strong>. A blockchain armazena o hash dessas evidências, garantindo rastreabilidade e integridade — qualquer alteração nas fotos invalidaria o hash, tornando a fraude detectável.
+                Cada lote registra <strong style={{ color: "#fff" }}>entrada, reciclado, rejeito e perda</strong> on-chain — e o contrato só aceita o processamento se o balanço fechar (<strong style={{ color: "#fff" }}>reciclado + rejeito ≤ entrada</strong>). A métrica de impacto é o material <strong style={{ color: "#fff" }}>efetivamente reciclado</strong>, não apenas o recebido. As evidências físicas (fotos de balança, saída e rejeito) ficam <strong style={{ color: "#fff" }}>off-chain no IPFS</strong>, ancoradas pelo hash on-chain — qualquer alteração na foto invalidaria o hash, tornando a fraude detectável.
               </p>
             </Reveal>
 
-            {/* ── Pesagens vinculadas ──────────────────────────────────────── */}
+            {/* ── Lotes vinculados ─────────────────────────────────────────── */}
             <Reveal style={{ marginBottom: 40 }}>
               <h2 className="gt-display-lg" style={{ color: "var(--color-gt-ink)", marginBottom: 4 }}>
-                Pesagens Certificadas ({pesagens.length})
+                Lotes Certificados ({lotes.length})
               </h2>
               <p className="gt-caption" style={{ color: "var(--color-gt-ink-mute)", marginBottom: 20 }}>
-                Pesagens validadas que contribuíram para a certificação desta empresa.
+                Lotes validados que compõem a certificação desta empresa — com o balanço de massa e a trilha completa (entrada → processo → validação).
               </p>
 
-              {pesagens.length === 0 ? (
-                <p className="gt-caption" style={{ color: "var(--color-gt-ink-faint)" }}>Nenhuma pesagem encontrada.</p>
+              {lotes.length === 0 ? (
+                <p className="gt-caption" style={{ color: "var(--color-gt-ink-faint)" }}>Nenhum lote encontrado.</p>
               ) : (
                 <div className="gt-stagger" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                  {pesagens.map((p) => {
-                    const txs = txData.pesagemTxs?.[p.id];
+                  {lotes.map((l) => {
+                    const txs = txData.loteTxs?.[l.id];
+                    const taxa = l.pesoEntrada > 0 ? ((l.pesoReciclado / l.pesoEntrada) * 100).toFixed(1) : "0";
+                    const semAuditor = l.auditor === "0x0000000000000000000000000000000000000000";
                     return (
-                      <div key={p.id} className="gt-card gt-card-hover" style={{ padding: 20 }}>
+                      <div key={l.id} className="gt-card gt-card-hover" style={{ padding: 20 }}>
                         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
                           <div>
                             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                              <Badge tone="ok">CERTIFICADA</Badge>
-                              <span className="gt-body-md" style={{ fontWeight: 600, color: "var(--color-gt-ink)" }}>Pesagem #{p.id}</span>
+                              <Badge tone="ok">CERTIFICADO</Badge>
+                              <span className="gt-body-md" style={{ fontWeight: 600, color: "var(--color-gt-ink)" }}>Lote #{l.id} — {l.material}</span>
                             </div>
-                            <p className="gt-micro" style={{ color: "var(--color-gt-ink-mute)" }}>{new Date(p.timestamp * 1000).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}</p>
+                            <p className="gt-micro" style={{ color: "var(--color-gt-ink-mute)" }}>{new Date(l.timestamp * 1000).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}</p>
                           </div>
                           <div style={{ textAlign: "right" }}>
-                            <p style={{ fontSize: "1.5rem", fontWeight: 560, color: "var(--color-gt-forest)" }}>{p.pesoKg.toLocaleString("pt-BR")} kg</p>
-                            <p className="gt-micro" style={{ color: "var(--color-gt-ink-mute)" }}>{p.material}</p>
+                            <p style={{ fontSize: "1.5rem", fontWeight: 560, color: "var(--color-gt-forest)" }}>{l.pesoReciclado.toLocaleString("pt-BR")} kg</p>
+                            <p className="gt-micro" style={{ color: "var(--color-gt-ink-mute)" }}>reciclado · taxa {taxa}%</p>
                           </div>
                         </div>
 
+                        {/* Balanço de massa */}
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 12 }}>
+                          <InfoRow label="Entrada" value={`${l.pesoEntrada} kg`} />
+                          <InfoRow label="Reciclado" value={`${l.pesoReciclado} kg`} />
+                          <InfoRow label="Rejeito" value={`${l.pesoRejeito} kg`} />
+                          <InfoRow label="Perda" value={`${l.pesoPerda} kg`} />
+                        </div>
+
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
-                          <InfoRow label="Material" value={p.material} />
-                          <InfoRow label="Empresa" value={p.empresaId} mono />
-                          <InfoRow label="Cooperativa" value={`${p.cooperativa.slice(0, 10)}...${p.cooperativa.slice(-6)}`} mono link={getEtherscanAddress(p.cooperativa)} />
-                          <InfoRow label="Auditor" value={p.auditor !== "0x0000000000000000000000000000000000000000" ? `${p.auditor.slice(0, 10)}...${p.auditor.slice(-6)}` : "—"} mono link={p.auditor !== "0x0000000000000000000000000000000000000000" ? getEtherscanAddress(p.auditor) : null} />
-                          <InfoRow label="CID IPFS" value={`${p.ipfsHash.slice(0, 20)}...`} link={ipfsUrl(p.ipfsHash)} />
+                          <InfoRow label="Recicladora" value={`${l.recicladora.slice(0, 10)}...${l.recicladora.slice(-6)}`} mono link={getEtherscanAddress(l.recicladora)} />
+                          <InfoRow label="Auditor" value={!semAuditor ? `${l.auditor.slice(0, 10)}...${l.auditor.slice(-6)}` : "—"} mono link={!semAuditor ? getEtherscanAddress(l.auditor) : null} />
                           <div style={{ background: "var(--color-gt-canvas-soft)", borderRadius: "var(--radius-gt-md)", padding: 12 }}>
                             <p className="gt-micro" style={{ color: "var(--color-gt-ink-faint)", marginBottom: 2 }}>Evidências</p>
-                            <EvidenceLink cid={p.ipfsHash} className="gt-link" style={{ fontSize: "0.75rem", padding: 0 }}>Ver fotos →</EvidenceLink>
+                            <EvidenceLink cidEntrada={l.ipfsEntrada} cidProcesso={l.ipfsProcesso} className="gt-link" style={{ fontSize: "0.75rem", padding: 0 }}>Ver fotos →</EvidenceLink>
                           </div>
-                          {txLoading ? (
-                            <InfoRow label="Tx Registro" value="Buscando..." />
-                          ) : txs?.reg ? (
-                            <InfoRow label="Tx Registro" value={`${txs.reg.slice(0, 14)}...`} mono link={getEtherscanTx(txs.reg)} />
-                          ) : (
-                            <InfoRow label="Tx Registro" value="Ver no Etherscan ↗" link={`https://sepolia.etherscan.io/address/${LEDGER_ADDRESS}#events`} />
-                          )}
-                          {txLoading ? (
-                            <InfoRow label="Tx Validação" value="Buscando..." />
-                          ) : txs?.val ? (
-                            <InfoRow label="Tx Validação" value={`${txs.val.slice(0, 14)}...`} mono link={getEtherscanTx(txs.val)} />
-                          ) : (
-                            <InfoRow label="Tx Validação" value="Ver no Etherscan ↗" link={`https://sepolia.etherscan.io/address/${LEDGER_ADDRESS}#events`} />
-                          )}
+                          {txLoading ? <InfoRow label="Tx Entrada" value="Buscando..." />
+                            : txs?.reg ? <InfoRow label="Tx Entrada" value={`${txs.reg.slice(0, 14)}...`} mono link={getEtherscanTx(txs.reg)} />
+                            : <InfoRow label="Tx Entrada" value="Ver no Etherscan ↗" link={`https://sepolia.etherscan.io/address/${LEDGER_ADDRESS}#events`} />}
+                          {txLoading ? <InfoRow label="Tx Processo" value="Buscando..." />
+                            : txs?.proc ? <InfoRow label="Tx Processo" value={`${txs.proc.slice(0, 14)}...`} mono link={getEtherscanTx(txs.proc)} />
+                            : <InfoRow label="Tx Processo" value="Ver no Etherscan ↗" link={`https://sepolia.etherscan.io/address/${LEDGER_ADDRESS}#events`} />}
+                          {txLoading ? <InfoRow label="Tx Validação" value="Buscando..." />
+                            : txs?.val ? <InfoRow label="Tx Validação" value={`${txs.val.slice(0, 14)}...`} mono link={getEtherscanTx(txs.val)} />
+                            : <InfoRow label="Tx Validação" value="Ver no Etherscan ↗" link={`https://sepolia.etherscan.io/address/${LEDGER_ADDRESS}#events`} />}
                         </div>
                       </div>
                     );
