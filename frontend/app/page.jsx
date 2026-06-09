@@ -76,18 +76,18 @@ export default function Home() {
       try {
         const ledger = getLedgerReadOnly();
         const seal = getSealReadOnly();
-        const [totalLotes, totalReciclado, nextTokenId] = await Promise.all([
-          ledger.totalLotes(),
-          ledger.totalRecicladoGlobal(),
+        const [totalPesagens, totalKg, nextTokenId] = await Promise.all([
+          ledger.totalPesagens(),
+          ledger.totalKgValidadoGlobal(),
           seal.nextTokenId(),
         ]);
         setMetricas({
-          totalLotes: Number(totalLotes),
-          totalReciclado: Number(totalReciclado),
+          totalPesagens: Number(totalPesagens),
+          totalKg: Number(totalKg),
           totalSelos: Number(nextTokenId),
         });
       } catch {
-        setMetricas({ totalLotes: 0, totalReciclado: 0, totalSelos: 0 });
+        setMetricas({ totalPesagens: 0, totalKg: 0, totalSelos: 0 });
       } finally {
         setLoading(false);
       }
@@ -159,8 +159,8 @@ export default function Home() {
             </div>
           ) : (
             <div className="gt-stagger" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
-              <MetricCard value={metricas.totalLotes} label="Lotes registrados" />
-              <MetricCard value={metricas.totalReciclado} unit="kg" label="Total reciclado validado" />
+              <MetricCard value={metricas.totalPesagens} label="Pesagens registradas" />
+              <MetricCard value={metricas.totalKg} unit="kg" label="Total de kg validados" />
               <MetricCard value={metricas.totalSelos} label="Selos Verdes emitidos" />
             </div>
           )}

@@ -23,28 +23,25 @@ export default function EmpresaPage() {
         const ledger = getLedgerReadOnly();
         const seal = getSealReadOnly();
 
-        const idsValidados = await ledger.getLotesPorEmpresa(empresaId);
-        const reciclado = Number(await ledger.recicladoPorEmpresa(empresaId));
-        const entrada = Number(await ledger.entradaPorEmpresa(empresaId));
+        const idsValidados = await ledger.getPesagensPorEmpresa(empresaId);
+        const totalKg = Number(await ledger.kgPorEmpresa(empresaId));
         const selosEmitidos = Number(await seal.totalSelosPorEmpresa(empresaId));
-        const totalLotes = idsValidados.length;
+        const totalPesagens = idsValidados.length;
 
-        // Carregar detalhes dos lotes validados
-        const lotes = await Promise.all(
+        // Carregar detalhes das pesagens validadas
+        const pesagens = await Promise.all(
           idsValidados.map(async (id) => {
-            const l = await ledger.lotes(Number(id));
+            const p = await ledger.pesagens(Number(id));
             return {
-              id: Number(l.id),
-              material: l.material,
-              pesoReciclado: Number(l.pesoReciclado),
-              pesoEntrada: Number(l.pesoEntrada),
-              timestamp: Number(l.processadoEm || l.recebidoEm),
+              id: Number(p.id),
+              material: p.material,
+              pesoKg: Number(p.pesoKg),
+              timestamp: Number(p.timestamp),
             };
           })
         );
 
-        const taxa = entrada > 0 ? (reciclado / entrada) * 100 : 0;
-        setDados({ reciclado, entrada, taxa, selosEmitidos, totalLotes, lotes });
+        setDados({ totalKg, selosEmitidos, totalPesagens, pesagens });
       } catch (e) {
         setErro("Erro ao carregar dados: " + e.message);
       } finally {
@@ -75,42 +72,29 @@ export default function EmpresaPage() {
         ) : dados ? (
           <div style={{ display: "flex", flexWrap: "wrap", gap: 32, alignItems: "flex-start" }}>
             <Reveal style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-              <SealCard empresaId={empresaId} totalKg={dados.reciclado} totalPesagens={dados.totalLotes} selosEmitidos={dados.selosEmitidos} />
+              <SealCard empresaId={empresaId} totalKg={dados.totalKg} totalPesagens={dados.totalPesagens} selosEmitidos={dados.selosEmitidos} />
               <QRDisplay empresaId={empresaId} />
             </Reveal>
 
-            <Reveal delay={120} style={{ flex: 1, minWidth: 280, display: "flex", flexDirection: "column", gap: 20 }}>
-              {/* Balanço de massa agregado */}
-              <div className="gt-card" style={{ padding: 24 }}>
-                <h2 className="gt-display-md" style={{ color: "var(--color-gt-ink)", marginBottom: 16 }}>Balanço de massa certificado</h2>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
-                  <BalBox label="Entrada" valor={dados.entrada} cor="var(--color-gt-ink)" />
-                  <BalBox label="Reciclado" valor={dados.reciclado} cor="var(--color-gt-forest)" />
-                  <BalBox label="Taxa" valor={`${dados.taxa.toFixed(1)}%`} cor="var(--color-gt-forest)" raw />
-                </div>
-              </div>
-
-              {/* Lotes validados */}
-              <div className="gt-card" style={{ padding: 24 }}>
-                <h2 className="gt-display-md" style={{ color: "var(--color-gt-ink)", marginBottom: 16 }}>
-                  Lotes Validados ({dados.lotes.length})
-                </h2>
-                {dados.lotes.length === 0 ? (
-                  <p className="gt-caption" style={{ color: "var(--color-gt-ink-faint)" }}>Nenhum lote validado ainda.</p>
-                ) : (
-                  <div style={{ display: "flex", flexDirection: "column" }}>
-                    {dados.lotes.map((l) => (
-                      <div key={l.id} className="gt-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid var(--color-gt-hairline)", padding: "10px 0" }}>
-                        <div>
-                          <span className="gt-body-md" style={{ fontWeight: 600, color: "var(--color-gt-ink)" }}>#{l.id} — {l.material}</span>
-                          <p className="gt-micro" style={{ color: "var(--color-gt-ink-faint)" }}>{new Date(l.timestamp * 1000).toLocaleDateString("pt-BR")} · entrada {l.pesoEntrada} kg</p>
-                        </div>
-                        <span style={{ color: "var(--color-gt-forest)", fontWeight: 700, fontSize: "0.875rem" }}>{l.pesoReciclado} kg</span>
+            <Reveal delay={120} className="gt-card" style={{ flex: 1, minWidth: 280, padding: 24 }}>
+              <h2 className="gt-display-md" style={{ color: "var(--color-gt-ink)", marginBottom: 16 }}>
+                Pesagens Validadas ({dados.pesagens.length})
+              </h2>
+              {dados.pesagens.length === 0 ? (
+                <p className="gt-caption" style={{ color: "var(--color-gt-ink-faint)" }}>Nenhuma pesagem validada ainda.</p>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  {dados.pesagens.map((p) => (
+                    <div key={p.id} className="gt-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid var(--color-gt-hairline)", padding: "10px 0" }}>
+                      <div>
+                        <span className="gt-body-md" style={{ fontWeight: 600, color: "var(--color-gt-ink)" }}>#{p.id} — {p.material}</span>
+                        <p className="gt-micro" style={{ color: "var(--color-gt-ink-faint)" }}>{new Date(p.timestamp * 1000).toLocaleDateString("pt-BR")}</p>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                      <span style={{ color: "var(--color-gt-forest)", fontWeight: 700, fontSize: "0.875rem" }}>{p.pesoKg} kg</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </Reveal>
           </div>
         ) : (
@@ -123,17 +107,6 @@ export default function EmpresaPage() {
           GreenTrack · Verificação pública e imutável na blockchain
         </p>
       </footer>
-    </div>
-  );
-}
-
-function BalBox({ label, valor, cor, raw }) {
-  return (
-    <div style={{ background: "var(--color-gt-canvas-soft)", borderRadius: "var(--radius-gt-md)", padding: 14, textAlign: "center" }}>
-      <p style={{ fontSize: "1.375rem", fontWeight: 560, color: cor, lineHeight: 1, letterSpacing: "-0.02em" }}>
-        {raw ? valor : <>{valor.toLocaleString("pt-BR")}<span style={{ fontSize: "0.6875rem", color: "var(--color-gt-ink-faint)", marginLeft: 2 }}>kg</span></>}
-      </p>
-      <p className="gt-micro" style={{ color: "var(--color-gt-ink-mute)", marginTop: 4 }}>{label}</p>
     </div>
   );
 }

@@ -10,19 +10,8 @@ function ipfsToGateway(uri) {
   return getIPFSUrl(cid);
 }
 
-async function fetchMeta(cid) {
-  if (!cid) return null;
-  try {
-    const res = await fetch(getIPFSUrl(cid));
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
-
-/* ── Gatilho clicável que abre o modal de evidências do lote ─────────────── */
-export function EvidenceLink({ cidEntrada, cidProcesso, children, style, className }) {
+/* ── Gatilho clicável que abre o modal de evidências ─────────────────────── */
+export function EvidenceLink({ cid, children, style, className }) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -34,44 +23,43 @@ export function EvidenceLink({ cidEntrada, cidProcesso, children, style, classNa
       >
         {children}
       </button>
-      {open && <EvidenceModal cidEntrada={cidEntrada} cidProcesso={cidProcesso} onClose={() => setOpen(false)} />}
+      {open && <EvidenceModal cid={cid} onClose={() => setOpen(false)} />}
     </>
   );
 }
 
-/* ── Modal: busca os JSONs das duas fases e mostra fotos + balanço ───────── */
-export default function EvidenceModal({ cidEntrada, cidProcesso, onClose }) {
+/* ── Modal que busca o JSON de metadados e mostra as fotos ────────────────── */
+export default function EvidenceModal({ cid, onClose }) {
   const [estado, setEstado] = useState("loading"); // loading | ok | erro
-  const [entrada, setEntrada] = useState(null);
-  const [processo, setProcesso] = useState(null);
+  const [meta, setMeta] = useState(null);
 
   useEffect(() => {
     let ativo = true;
-    (async () => {
-      const [me, mp] = await Promise.all([fetchMeta(cidEntrada), fetchMeta(cidProcesso)]);
-      if (!ativo) return;
-      setEntrada(me);
-      setProcesso(mp);
-      setEstado(me || mp ? "ok" : "erro");
-    })();
+    async function carregar() {
+      try {
+        const res = await fetch(getIPFSUrl(cid));
+        if (!res.ok) throw new Error("Falha ao buscar metadados");
+        const json = await res.json();
+        if (!ativo) return;
+        setMeta(json);
+        setEstado("ok");
+      } catch {
+        if (ativo) setEstado("erro");
+      }
+    }
+    carregar();
     return () => { ativo = false; };
-  }, [cidEntrada, cidProcesso]);
+  }, [cid]);
 
+  // Fecha com ESC
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const fotoBalanca = ipfsToGateway(entrada?.evidencias?.foto_balanca);
-  const fotoSaida = ipfsToGateway(processo?.evidencias?.foto_saida);
-  const fotoRejeito = ipfsToGateway(processo?.evidencias?.foto_rejeito);
-
-  const reciclado = processo?.pesoReciclado;
-  const rejeito = processo?.pesoRejeito;
-  const perda = processo?.pesoPerda;
-  const entradaKg = entrada?.pesoEntrada;
-  const taxa = entradaKg && reciclado != null ? ((reciclado / entradaKg) * 100).toFixed(1) : null;
+  const balanca = ipfsToGateway(meta?.evidencias?.foto_balanca);
+  const fardos = ipfsToGateway(meta?.evidencias?.foto_fardos);
 
   return (
     <div
@@ -82,14 +70,15 @@ export default function EvidenceModal({ cidEntrada, cidProcesso, onClose }) {
       <div
         className="gt-scale-in"
         onClick={(e) => e.stopPropagation()}
-        style={{ background: "#ffffff", borderRadius: "var(--radius-gt-xl)", padding: 28, width: "100%", maxWidth: 760, boxShadow: "0 20px 60px rgba(0,0,0,0.3)", maxHeight: "90vh", overflowY: "auto" }}
+        style={{ background: "#ffffff", borderRadius: "var(--radius-gt-xl)", padding: 28, width: "100%", maxWidth: 720, boxShadow: "0 20px 60px rgba(0,0,0,0.3)", maxHeight: "90vh", overflowY: "auto" }}
       >
+        {/* Cabeçalho */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
           <div>
-            <h3 className="gt-display-md" style={{ color: "var(--color-gt-ink)" }}>Evidências do lote</h3>
-            {entrada && (
+            <h3 className="gt-display-md" style={{ color: "var(--color-gt-ink)" }}>Evidências da pesagem</h3>
+            {meta && (
               <p className="gt-caption" style={{ color: "var(--color-gt-ink-mute)", marginTop: 4 }}>
-                {entrada.material}{entradaKg != null ? ` · entrada ${entradaKg} kg` : ""}{entrada.empresaId ? ` · ${entrada.empresaId}` : ""}
+                {meta.material} · {meta.pesoKg} kg{meta.empresaId ? ` · ${meta.empresaId}` : ""}
               </p>
             )}
           </div>
@@ -106,55 +95,30 @@ export default function EvidenceModal({ cidEntrada, cidProcesso, onClose }) {
         {estado === "erro" && (
           <div style={{ textAlign: "center", padding: "32px 0" }}>
             <p className="gt-body-md" style={{ color: "var(--color-gt-ink)", marginBottom: 8 }}>Não foi possível carregar as evidências.</p>
-            {cidEntrada && <a href={getIPFSUrl(cidEntrada)} target="_blank" rel="noopener noreferrer" className="gt-link" style={{ fontSize: "0.875rem" }}>Abrir metadados de entrada ↗</a>}
+            <a href={getIPFSUrl(cid)} target="_blank" rel="noopener noreferrer" className="gt-link" style={{ fontSize: "0.875rem" }}>
+              Abrir metadados no IPFS ↗
+            </a>
           </div>
         )}
 
         {estado === "ok" && (
           <>
-            {/* Balanço de massa */}
-            {reciclado != null && (
-              <div style={{ background: "var(--color-gt-canvas-soft)", border: "1px solid var(--color-gt-hairline)", borderRadius: "var(--radius-gt-md)", padding: 16, marginBottom: 20 }}>
-                <p className="gt-micro" style={{ fontWeight: 700, color: "var(--color-gt-ink-mute)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
-                  Balanço de massa{taxa ? ` · taxa de reciclagem ${taxa}%` : ""}
-                </p>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
-                  <Balanco label="Entrada" valor={entradaKg} cor="var(--color-gt-ink)" />
-                  <Balanco label="Reciclado" valor={reciclado} cor="var(--color-gt-forest)" />
-                  <Balanco label="Rejeito" valor={rejeito} cor="var(--color-gt-ink-mute)" />
-                  <Balanco label="Perda" valor={perda} cor="var(--color-gt-ink-mute)" />
-                </div>
-              </div>
-            )}
-
-            {/* Fotos */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
-              <Foto titulo="Entrada — tíquete da balança" url={fotoBalanca} />
-              <Foto titulo="Processo — saída reciclada" url={fotoSaida} />
-              <Foto titulo="Processo — rejeito" url={fotoRejeito} />
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
+              <Foto titulo="Tíquete da balança" url={balanca} />
+              <Foto titulo="Fardos / material" url={fardos} />
             </div>
 
-            <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--color-gt-hairline)", display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--color-gt-hairline)", display: "flex", flexWrap: "wrap", gap: 16, justifyContent: "space-between", alignItems: "center" }}>
               <p className="gt-micro" style={{ color: "var(--color-gt-ink-faint)" }}>
                 Imagens ancoradas no IPFS — o hash on-chain garante a integridade.
               </p>
-              <div style={{ display: "flex", gap: 12 }}>
-                {cidEntrada && <a href={getIPFSUrl(cidEntrada)} target="_blank" rel="noopener noreferrer" className="gt-link" style={{ fontSize: "0.75rem" }}>JSON entrada ↗</a>}
-                {cidProcesso && <a href={getIPFSUrl(cidProcesso)} target="_blank" rel="noopener noreferrer" className="gt-link" style={{ fontSize: "0.75rem" }}>JSON processo ↗</a>}
-              </div>
+              <a href={getIPFSUrl(cid)} target="_blank" rel="noopener noreferrer" className="gt-link" style={{ fontSize: "0.75rem" }}>
+                Ver metadados (JSON) ↗
+              </a>
             </div>
           </>
         )}
       </div>
-    </div>
-  );
-}
-
-function Balanco({ label, valor, cor }) {
-  return (
-    <div style={{ textAlign: "center" }}>
-      <p style={{ fontSize: "1.125rem", fontWeight: 560, color: cor, lineHeight: 1 }}>{valor != null ? valor : "—"}<span style={{ fontSize: "0.6875rem", fontWeight: 480, color: "var(--color-gt-ink-faint)", marginLeft: 2 }}>kg</span></p>
-      <p className="gt-micro" style={{ color: "var(--color-gt-ink-mute)", marginTop: 2 }}>{label}</p>
     </div>
   );
 }
@@ -166,7 +130,7 @@ function Foto({ titulo, url }) {
       <p className="gt-micro" style={{ fontWeight: 700, color: "var(--color-gt-ink-mute)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{titulo}</p>
       {!url || erro ? (
         <div style={{ aspectRatio: "4/3", background: "var(--color-gt-canvas-soft)", border: "1px solid var(--color-gt-hairline)", borderRadius: "var(--radius-gt-md)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <span className="gt-caption" style={{ color: "var(--color-gt-ink-faint)" }}>Sem imagem</span>
+          <span className="gt-caption" style={{ color: "var(--color-gt-ink-faint)" }}>Imagem indisponível</span>
         </div>
       ) : (
         <a href={url} target="_blank" rel="noopener noreferrer" style={{ display: "block" }}>

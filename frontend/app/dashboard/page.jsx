@@ -25,29 +25,35 @@ export default function DashboardPage() {
       const seal   = getSealReadOnly();
 
       // ── Métricas base ──────────────────────────────────────────────────────
-      const totalLotes     = Number(await ledger.totalLotes());          await delay(120);
-      const totalReciclado = Number(await ledger.totalRecicladoGlobal()); await delay(120);
-      const totalEntrada   = Number(await ledger.totalEntradaGlobal());   await delay(120);
-      const nextTokenId    = Number(await seal.nextTokenId());            await delay(120);
-      const listaCoops     = await ledger.getListaCooperativas();         await delay(120);
-      const listaEmpresas  = await ledger.getEmpresas();                  await delay(120);
+      const totalPesagens  = Number(await ledger.totalPesagens());  await delay(120);
+      const totalKgGlobal  = Number(await ledger.totalKgValidadoGlobal()); await delay(120);
+      const nextTokenId    = Number(await seal.nextTokenId());       await delay(120);
+      const listaCoops     = await ledger.getListaCooperativas();    await delay(120);
+      const listaEmpresas  = await ledger.getEmpresas();             await delay(120);
 
-      // ── Dados por empresa (lotes validados) ───────────────────────────────
+      // ── Dados por empresa ──────────────────────────────────────────────────
       const empresaMap = {};
       for (const empresaId of listaEmpresas) {
-        const reciclado   = Number(await ledger.recicladoPorEmpresa(empresaId)); await delay(120);
-        const entrada     = Number(await ledger.entradaPorEmpresa(empresaId));   await delay(120);
-        const loteIds     = await ledger.getLotesPorEmpresa(empresaId);          await delay(120);
+        const kg          = Number(await ledger.kgPorEmpresa(empresaId)); await delay(120);
+        const pesagemIds  = await ledger.getPesagensPorEmpresa(empresaId); await delay(120);
 
-        const lotes = [];
-        for (const id of loteIds) {
-          const l = await ledger.lotes(Number(id));
-          lotes.push({ id: Number(l.id), material: l.material, pesoReciclado: Number(l.pesoReciclado) });
+        const pesagens = [];
+        for (const id of pesagemIds) {
+          const p = await ledger.pesagens(Number(id));
+          pesagens.push({
+            id:          Number(p.id),
+            material:    p.material,
+            pesoKg:      Number(p.pesoKg),
+            cooperativa: p.cooperativa,
+            auditor:     p.auditor,
+            ipfsHash:    p.ipfsHash,
+            timestamp:   Number(p.timestamp),
+          });
           await delay(100);
         }
-        const materials = [...new Set(lotes.map((l) => l.material).filter(Boolean))];
-        const taxa = entrada > 0 ? (reciclado / entrada) * 100 : 0;
-        empresaMap[empresaId] = { id: empresaId, reciclado, entrada, taxa, lotes, materials };
+
+        const materials = [...new Set(pesagens.map((p) => p.material).filter(Boolean))];
+        empresaMap[empresaId] = { id: empresaId, kg, pesagens, materials };
       }
 
       // ── Selos (últimos 5, mais recentes primeiro) ─────────────────────────
@@ -61,19 +67,16 @@ export default function DashboardPage() {
       }
 
       // ── Métricas derivadas ─────────────────────────────────────────────────
-      const totalValidados = Object.values(empresaMap).reduce((s, e) => s + e.lotes.length, 0);
-      const taxaGlobal     = totalEntrada > 0 ? (totalReciclado / totalEntrada) * 100 : 0;
-      const ranking        = Object.values(empresaMap).sort((a, b) => b.reciclado - a.reciclado);
+      const totalValidadas   = Object.values(empresaMap).reduce((s, e) => s + e.pesagens.length, 0);
+      const ranking          = Object.values(empresaMap).sort((a, b) => b.kg - a.kg);
 
       setDados({
-        totalLotes,
-        totalReciclado,
-        totalEntrada,
-        taxaGlobal,
+        totalPesagens,
+        totalKgGlobal,
         totalSelos: nextTokenId,
         totalCooperativas: listaCoops.length,
         totalEmpresasCertificadas: listaEmpresas.length,
-        totalValidados,
+        totalValidadas,
         ranking,
         selos,
       });
@@ -116,11 +119,11 @@ export default function DashboardPage() {
             {/* ── Métricas ────────────────────────────────────────────────── */}
             <section style={{ marginBottom: 56 }}>
               <div className="gt-stagger" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
-                <MetricCard value={dados.totalReciclado} unit="kg" label="Reciclado validado" accent />
-                <MetricCard value={dados.totalEntrada} unit="kg" label="Entrada total" />
-                <MetricTaxa taxa={dados.taxaGlobal} />
-                <MetricCard value={dados.totalLotes} label="Lotes registrados" />
+                <MetricCard value={dados.totalKgGlobal} unit="kg" label="Kg validados" />
+                <MetricCard value={dados.totalPesagens} label="Pesagens registradas" />
+                <MetricCard value={dados.totalValidadas} label="Pesagens validadas" />
                 <MetricCard value={dados.totalSelos} label="Selos emitidos" />
+                <MetricCard value={dados.totalCooperativas} label="Cooperativas" />
                 <MetricCard value={dados.totalEmpresasCertificadas} label="Empresas certificadas" />
               </div>
             </section>
@@ -129,7 +132,7 @@ export default function DashboardPage() {
             {dados.ranking.length > 0 && (
               <Reveal as="section" style={{ marginBottom: 56 }}>
                 <h2 className="gt-display-lg" style={{ color: "var(--color-gt-ink)", marginBottom: 20 }}>
-                  Ranking por kg reciclado certificado
+                  Ranking por kg certificado
                 </h2>
                 <div className="gt-card" style={{ overflow: "hidden" }}>
                   <table style={{ width: "100%", fontSize: "0.875rem", borderCollapse: "collapse" }}>
@@ -138,10 +141,9 @@ export default function DashboardPage() {
                         <th style={{ padding: "12px 20px", textAlign: "left", width: 40 }}>#</th>
                         <th style={{ padding: "12px 20px", textAlign: "left" }}>Empresa</th>
                         <th style={{ padding: "12px 20px", textAlign: "left" }}>Materiais</th>
-                        <th style={{ padding: "12px 20px", textAlign: "right" }}>Reciclado</th>
-                        <th style={{ padding: "12px 20px", textAlign: "right" }}>Taxa</th>
+                        <th style={{ padding: "12px 20px", textAlign: "right" }}>Kg certificados</th>
                         <th style={{ padding: "12px 20px", textAlign: "right" }}>Selos</th>
-                        <th style={{ padding: "12px 20px", textAlign: "right" }}>Lotes</th>
+                        <th style={{ padding: "12px 20px", textAlign: "right" }}>Pesagens</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -152,10 +154,9 @@ export default function DashboardPage() {
                             <td style={{ padding: "14px 20px", fontWeight: 700, color: "var(--color-gt-ink-faint)" }}>{i + 1}</td>
                             <td style={{ padding: "14px 20px", fontFamily: "monospace", fontSize: "0.75rem", color: "var(--color-gt-ink)", fontWeight: 600 }}>{e.id}</td>
                             <td style={{ padding: "14px 20px", color: "var(--color-gt-ink-mute)" }}>{e.materials.join(", ") || "—"}</td>
-                            <td style={{ padding: "14px 20px", textAlign: "right", fontWeight: 700, color: "var(--color-gt-forest)" }}>{e.reciclado.toLocaleString("pt-BR")} kg</td>
-                            <td style={{ padding: "14px 20px", textAlign: "right", color: "var(--color-gt-ink-mute)" }}>{e.taxa.toFixed(0)}%</td>
+                            <td style={{ padding: "14px 20px", textAlign: "right", fontWeight: 700, color: "var(--color-gt-forest)" }}>{e.kg.toLocaleString("pt-BR")} kg</td>
                             <td style={{ padding: "14px 20px", textAlign: "right", color: "var(--color-gt-ink-mute)", fontWeight: 600 }}>{selosEmpresa > 0 ? selosEmpresa : "—"}</td>
-                            <td style={{ padding: "14px 20px", textAlign: "right", color: "var(--color-gt-ink-mute)" }}>{e.lotes.length}</td>
+                            <td style={{ padding: "14px 20px", textAlign: "right", color: "var(--color-gt-ink-mute)" }}>{e.pesagens.length}</td>
                           </tr>
                         );
                       })}
@@ -225,7 +226,7 @@ function SeloCard({ selo }) {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         <div style={{ background: "var(--color-gt-canvas-soft)", borderRadius: "var(--radius-gt-md)", padding: 12, textAlign: "center" }}>
           <p style={{ fontSize: "1.25rem", fontWeight: 560, color: "var(--color-gt-forest)" }}>{selo.totalKg.toLocaleString("pt-BR")}</p>
-          <p className="gt-micro" style={{ color: "var(--color-gt-ink-mute)" }}>kg reciclados</p>
+          <p className="gt-micro" style={{ color: "var(--color-gt-ink-mute)" }}>kg certificados</p>
         </div>
         <div style={{ background: "var(--color-gt-canvas-soft)", borderRadius: "var(--radius-gt-md)", padding: 12, textAlign: "center" }}>
           <p className="gt-caption" style={{ fontWeight: 600, color: "var(--color-gt-ink)", lineHeight: 1.2 }}>{selo.materials.join(", ") || "—"}</p>
@@ -254,25 +255,14 @@ function SeloCard({ selo }) {
   );
 }
 
-function MetricCard({ value, label, unit, accent }) {
+function MetricCard({ value, label, unit }) {
   return (
     <div className="gt-card gt-card-hover" style={{ padding: 20, textAlign: "center" }}>
-      <p style={{ fontSize: "1.75rem", fontWeight: 560, color: accent ? "var(--color-gt-forest)" : "var(--color-gt-ink)", letterSpacing: "-0.02em", lineHeight: 1 }}>
+      <p style={{ fontSize: "1.75rem", fontWeight: 560, color: "var(--color-gt-forest)", letterSpacing: "-0.02em", lineHeight: 1 }}>
         <AnimatedCounter value={value} />
         {unit && <span style={{ fontSize: "0.8125rem", fontWeight: 480, marginLeft: 3, color: "var(--color-gt-ink-mute)" }}>{unit}</span>}
       </p>
       <p className="gt-micro" style={{ color: "var(--color-gt-ink-mute)", marginTop: 6 }}>{label}</p>
-    </div>
-  );
-}
-
-function MetricTaxa({ taxa }) {
-  return (
-    <div className="gt-card gt-card-hover" style={{ padding: 20, textAlign: "center" }}>
-      <p style={{ fontSize: "1.75rem", fontWeight: 560, color: "var(--color-gt-forest)", letterSpacing: "-0.02em", lineHeight: 1 }}>
-        {taxa.toFixed(1)}<span style={{ fontSize: "0.8125rem", fontWeight: 480, marginLeft: 1, color: "var(--color-gt-ink-mute)" }}>%</span>
-      </p>
-      <p className="gt-micro" style={{ color: "var(--color-gt-ink-mute)", marginTop: 6 }}>Taxa de reciclagem</p>
     </div>
   );
 }

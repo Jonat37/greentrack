@@ -12,31 +12,23 @@ contract RecyclingLedger is AccessControl {
     bytes32 public constant COOPERATIVA_ROLE = keccak256("COOPERATIVA_ROLE");
     bytes32 public constant AUDITOR_ROLE = keccak256("AUDITOR_ROLE");
 
-    // RECEBIDO  → entrada pesada (fase 1)
-    // PROCESSADO → reciclado/rejeito informados, balanço fechado (fase 2)
-    // VALIDADO  → auditor confirmou; reciclado contabilizado
-    // REJEITADO → auditor recusou
-    enum StatusLote { RECEBIDO, PROCESSADO, VALIDADO, REJEITADO }
+    enum Status { PENDENTE, VALIDADO, REJEITADO }
     enum StatusAuditor { PENDENTE, APROVADO, REJEITADO, BLOQUEADO }
     enum StatusCooperativa { ATIVA, BLOQUEADA }
 
-    struct Lote {
+    struct Pesagem {
         uint256 id;
-        address recicladora;     // quem opera (detém COOPERATIVA_ROLE)
+        address cooperativa;
         string material;
-        uint256 pesoEntrada;     // kg recebido (fase 1)
-        uint256 pesoReciclado;   // kg de saída reciclada (fase 2)
-        uint256 pesoRejeito;     // kg de rejeito (fase 2)
-        uint256 pesoPerda;       // derivado on-chain = entrada - reciclado - rejeito
-        string ipfsEntrada;      // evidências da pesagem de entrada
-        string ipfsProcesso;     // evidências do processamento (saída + rejeito)
-        uint256 recebidoEm;
-        uint256 processadoEm;
-        StatusLote status;
+        uint256 pesoKg;
+        string ipfsHash;
+        uint256 timestamp;
+        Status status;
         address auditor;
         string empresaId;
         string localColeta;
         string dataColeta;
+        string observacao;
     }
 
     struct Cooperativa {
@@ -69,16 +61,14 @@ contract RecyclingLedger is AccessControl {
         bool ativa;
     }
 
-    uint256 public totalLotes;
-    uint256 public totalRecicladoGlobal;   // métrica de impacto = kg reciclado
-    uint256 public totalEntradaGlobal;     // kg recebido (para taxa de reciclagem)
-    uint256 public kgParaSelo = 1000;      // meta em kg RECICLADOS por selo
+    uint256 public totalPesagens;
+    uint256 public totalKgValidadoGlobal;
+    uint256 public kgParaSelo = 1000;
 
-    mapping(uint256 => Lote) public lotes;
-    mapping(string => uint256[]) public lotesPorEmpresa;       // lotes VALIDADOS por empresa
-    mapping(string => uint256) public recicladoPorEmpresa;
-    mapping(string => uint256) public entradaPorEmpresa;
-    mapping(address => uint256[]) public lotesPorCooperativa;  // todos os lotes da recicladora
+    mapping(uint256 => Pesagem) public pesagens;
+    mapping(string => uint256[]) public pesagensPorEmpresa;
+    mapping(string => uint256) public kgPorEmpresa;
+    mapping(address => uint256[]) public pesagensPorCooperativa;
 
     string[] private empresas;
     mapping(string => bool) private empresaRegistrada;
@@ -94,10 +84,9 @@ contract RecyclingLedger is AccessControl {
 
     IGreenSeal public greenSeal;
 
-    event LoteRecebido(uint256 indexed id, address indexed recicladora, string material, uint256 pesoEntrada, string empresaId);
-    event LoteProcessado(uint256 indexed id, uint256 pesoReciclado, uint256 pesoRejeito, uint256 pesoPerda);
-    event LoteValidado(uint256 indexed id, address indexed auditor);
-    event LoteRejeitado(uint256 indexed id, address indexed auditor, string motivo);
+    event PesagemRegistrada(uint256 indexed id, address indexed cooperativa, string material, uint256 pesoKg, string ipfsHash, string empresaId);
+    event PesagemValidada(uint256 indexed id, address indexed auditor);
+    event PesagemRejeitada(uint256 indexed id, address indexed auditor, string motivo);
     event CooperativaCadastrada(address indexed carteira, string nome);
     event AuditorSolicitado(address indexed carteira, string nome);
     event AuditorAprovado(address indexed carteira);
@@ -235,116 +224,83 @@ contract RecyclingLedger is AccessControl {
         emit EmpresaApoiadoraCadastrada(empresaId, nome);
     }
 
-    // ── Lotes: fase 1 (entrada) ─────────────────────────────────────────────
+    // ── Pesagens ────────────────────────────────────────────────────────────
 
-    function registrarEntrada(
+    function registrarPesagem(
         string calldata material,
-        uint256 pesoEntrada,
+        uint256 pesoKg,
+        string calldata ipfsHash,
         string calldata empresaId,
-        string calldata ipfsEntrada,
         string calldata localColeta,
-        string calldata dataColeta
+        string calldata dataColeta,
+        string calldata observacao
     ) external onlyRole(COOPERATIVA_ROLE) {
-        require(pesoEntrada > 0, "Peso entrada invalido");
-        require(bytes(ipfsEntrada).length > 0, "IPFS entrada obrigatorio");
+        require(pesoKg > 0, "Peso invalido");
+        require(bytes(ipfsHash).length > 0, "IPFS hash obrigatorio");
 
-        uint256 id = ++totalLotes;
+        uint256 id = ++totalPesagens;
 
-        lotes[id] = Lote({
+        pesagens[id] = Pesagem({
             id: id,
-            recicladora: msg.sender,
+            cooperativa: msg.sender,
             material: material,
-            pesoEntrada: pesoEntrada,
-            pesoReciclado: 0,
-            pesoRejeito: 0,
-            pesoPerda: 0,
-            ipfsEntrada: ipfsEntrada,
-            ipfsProcesso: "",
-            recebidoEm: block.timestamp,
-            processadoEm: 0,
-            status: StatusLote.RECEBIDO,
+            pesoKg: pesoKg,
+            ipfsHash: ipfsHash,
+            timestamp: block.timestamp,
+            status: Status.PENDENTE,
             auditor: address(0),
             empresaId: empresaId,
             localColeta: localColeta,
-            dataColeta: dataColeta
+            dataColeta: dataColeta,
+            observacao: observacao
         });
 
-        lotesPorCooperativa[msg.sender].push(id);
+        pesagensPorCooperativa[msg.sender].push(id);
 
-        emit LoteRecebido(id, msg.sender, material, pesoEntrada, empresaId);
+        emit PesagemRegistrada(id, msg.sender, material, pesoKg, ipfsHash, empresaId);
     }
 
-    // ── Lotes: fase 2 (processamento + balanço de massa) ────────────────────
+    function validarPesagem(uint256 id) external onlyRole(AUDITOR_ROLE) {
+        require(id > 0 && id <= totalPesagens, "Pesagem inexistente");
+        Pesagem storage p = pesagens[id];
+        require(p.status == Status.PENDENTE, "Status invalido");
+        require(p.cooperativa != msg.sender, "Auditor nao pode validar propria pesagem");
 
-    function registrarProcessamento(
-        uint256 id,
-        uint256 pesoReciclado,
-        uint256 pesoRejeito,
-        string calldata ipfsProcesso
-    ) external onlyRole(COOPERATIVA_ROLE) {
-        require(id > 0 && id <= totalLotes, "Lote inexistente");
-        Lote storage l = lotes[id];
-        require(l.status == StatusLote.RECEBIDO, "Lote nao esta RECEBIDO");
-        require(l.recicladora == msg.sender, "Apenas quem recebeu processa");
-        require(bytes(ipfsProcesso).length > 0, "IPFS processo obrigatorio");
-        // ── INVARIANTE DE BALANÇO DE MASSA ──
-        require(pesoReciclado + pesoRejeito <= l.pesoEntrada, "Balanco nao fecha");
+        p.status = Status.VALIDADO;
+        p.auditor = msg.sender;
 
-        l.pesoReciclado = pesoReciclado;
-        l.pesoRejeito = pesoRejeito;
-        l.pesoPerda = l.pesoEntrada - pesoReciclado - pesoRejeito;
-        l.ipfsProcesso = ipfsProcesso;
-        l.processadoEm = block.timestamp;
-        l.status = StatusLote.PROCESSADO;
+        pesagensPorEmpresa[p.empresaId].push(id);
+        kgPorEmpresa[p.empresaId] += p.pesoKg;
 
-        emit LoteProcessado(id, pesoReciclado, pesoRejeito, l.pesoPerda);
-    }
-
-    // ── Lotes: validação / rejeição (auditor) ───────────────────────────────
-
-    function validarLote(uint256 id) external onlyRole(AUDITOR_ROLE) {
-        require(id > 0 && id <= totalLotes, "Lote inexistente");
-        Lote storage l = lotes[id];
-        require(l.status == StatusLote.PROCESSADO, "Lote precisa estar PROCESSADO");
-        require(l.recicladora != msg.sender, "Auditor nao pode validar proprio lote");
-
-        l.status = StatusLote.VALIDADO;
-        l.auditor = msg.sender;
-
-        lotesPorEmpresa[l.empresaId].push(id);
-        recicladoPorEmpresa[l.empresaId] += l.pesoReciclado;
-        entradaPorEmpresa[l.empresaId] += l.pesoEntrada;
-
-        if (!empresaRegistrada[l.empresaId]) {
-            empresaRegistrada[l.empresaId] = true;
-            empresas.push(l.empresaId);
+        if (!empresaRegistrada[p.empresaId]) {
+            empresaRegistrada[p.empresaId] = true;
+            empresas.push(p.empresaId);
         }
-        totalRecicladoGlobal += l.pesoReciclado;
-        totalEntradaGlobal += l.pesoEntrada;
+        totalKgValidadoGlobal += p.pesoKg;
 
-        emit LoteValidado(id, msg.sender);
-        _verificarEmissaoSelo(l.empresaId);
+        emit PesagemValidada(id, msg.sender);
+        _verificarEmissaoSelo(p.empresaId);
     }
 
-    function rejeitarLote(uint256 id, string calldata motivo) external onlyRole(AUDITOR_ROLE) {
-        require(id > 0 && id <= totalLotes, "Lote inexistente");
-        Lote storage l = lotes[id];
-        require(l.status == StatusLote.RECEBIDO || l.status == StatusLote.PROCESSADO, "Status invalido");
+    function rejeitarPesagem(uint256 id, string calldata motivo) external onlyRole(AUDITOR_ROLE) {
+        require(id > 0 && id <= totalPesagens, "Pesagem inexistente");
+        Pesagem storage p = pesagens[id];
+        require(p.status == Status.PENDENTE, "Status invalido");
 
-        l.status = StatusLote.REJEITADO;
-        l.auditor = msg.sender;
+        p.status = Status.REJEITADO;
+        p.auditor = msg.sender;
 
-        emit LoteRejeitado(id, msg.sender, motivo);
+        emit PesagemRejeitada(id, msg.sender, motivo);
     }
 
     // ── Leitura ─────────────────────────────────────────────────────────────
 
-    function getLotesPorEmpresa(string calldata empresaId) external view returns (uint256[] memory) {
-        return lotesPorEmpresa[empresaId];
+    function getPesagensPorEmpresa(string calldata empresaId) external view returns (uint256[] memory) {
+        return pesagensPorEmpresa[empresaId];
     }
 
-    function getLotesPorCooperativa(address carteira) external view returns (uint256[] memory) {
-        return lotesPorCooperativa[carteira];
+    function getPesagensPorCooperativa(address carteira) external view returns (uint256[] memory) {
+        return pesagensPorCooperativa[carteira];
     }
 
     function getEmpresas() external view returns (string[] memory) {
@@ -366,11 +322,11 @@ contract RecyclingLedger is AccessControl {
     // ── Interno ─────────────────────────────────────────────────────────────
 
     function _verificarEmissaoSelo(string memory empresaId) internal {
-        uint256 selosDevidos = recicladoPorEmpresa[empresaId] / kgParaSelo;
+        uint256 selosDevidos = kgPorEmpresa[empresaId] / kgParaSelo;
         uint256 selosEmitidos = greenSeal.totalSelosPorEmpresa(empresaId);
 
         if (selosDevidos > selosEmitidos) {
-            greenSeal.emitirSelo(empresaId, recicladoPorEmpresa[empresaId]);
+            greenSeal.emitirSelo(empresaId, kgPorEmpresa[empresaId]);
         }
     }
 }

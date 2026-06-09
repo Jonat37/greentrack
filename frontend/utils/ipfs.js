@@ -21,61 +21,33 @@ export async function uploadJSONIPFS(objeto, nome) {
   }
 }
 
-// Fase 1 — metadados da ENTRADA do lote (pesagem de recebimento)
-export async function criarMetadataEntrada({
+export async function criarMetadataPesagem({
   cidFotoBalanca,
+  cidFotoFardos,
   material,
-  pesoEntrada,
+  pesoKg,
+  cooperativaId,
   empresaId,
-  localColeta,
-  dataColeta,
   timestamp,
 }) {
   try {
     const metadata = {
-      versao: "2.0",
-      tipo: "lote_entrada",
+      versao: "1.0",
+      tipo: "pesagem_reciclagem",
       material,
-      pesoEntrada,
+      pesoKg,
+      cooperativaId,
       empresaId,
-      localColeta,
-      dataColeta,
       timestamp,
       evidencias: {
         foto_balanca: `ipfs://${cidFotoBalanca}`,
+        foto_fardos: `ipfs://${cidFotoFardos}`,
       },
     };
-    return await uploadJSONIPFS(metadata, `lote_entrada_${Date.now()}`);
-  } catch (error) {
-    throw new Error(`Erro ao criar metadados da entrada: ${error.message}`);
-  }
-}
 
-// Fase 2 — metadados do PROCESSAMENTO (balanço de massa + evidências de saída)
-export async function criarMetadataProcesso({
-  cidFotoSaida,
-  cidFotoRejeito,
-  pesoReciclado,
-  pesoRejeito,
-  pesoPerda,
-  timestamp,
-}) {
-  try {
-    const metadata = {
-      versao: "2.0",
-      tipo: "lote_processo",
-      pesoReciclado,
-      pesoRejeito,
-      pesoPerda,
-      timestamp,
-      evidencias: {
-        foto_saida: `ipfs://${cidFotoSaida}`,
-        foto_rejeito: `ipfs://${cidFotoRejeito}`,
-      },
-    };
-    return await uploadJSONIPFS(metadata, `lote_processo_${Date.now()}`);
+    return await uploadJSONIPFS(metadata, `pesagem_${Date.now()}`);
   } catch (error) {
-    throw new Error(`Erro ao criar metadados do processamento: ${error.message}`);
+    throw new Error(`Erro ao criar metadados da pesagem: ${error.message}`);
   }
 }
 
