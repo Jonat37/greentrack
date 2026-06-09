@@ -3,14 +3,11 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { getLedgerReadOnly, getSealReadOnly, getVerifyUrl, getEtherscanAddress, getEtherscanTx, getEtherscanToken, queryFilterRobust } from "../../../../../utils/contract";
+import { getLedgerReadOnly, getSealReadOnly, getVerifyUrl, getEtherscanAddress, getEtherscanTx, getEtherscanToken, queryFilterRobust, LEDGER_ADDRESS, SEAL_ADDRESS } from "../../../../../utils/contract";
 import { getIPFSUrl as ipfsUrl } from "../../../../../utils/ipfs";
 import QRDisplay from "../../../../../components/QRDisplay";
 import { TopNav, Reveal, Loader, Badge } from "../../../../../components/ui";
 import { EvidenceLink } from "../../../../../components/EvidenceModal";
-
-const SEAL_ADDRESS   = process.env.NEXT_PUBLIC_CONTRACT_SEAL;
-const LEDGER_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_LEDGER;
 const SEPOLIA_CHAIN_ID = "11155111";
 const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 

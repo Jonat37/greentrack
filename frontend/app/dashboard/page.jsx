@@ -2,12 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getLedgerReadOnly, getSealReadOnly, getVerifyUrl, getEtherscanAddress } from "../../utils/contract";
+import { getLedgerReadOnly, getSealReadOnly, getVerifyUrl, getEtherscanAddress, LEDGER_ADDRESS, SEAL_ADDRESS } from "../../utils/contract";
 import QRDisplay from "../../components/QRDisplay";
 import { TopNav, AnimatedCounter, Reveal, Loader, Notice, SectionLabel, Badge } from "../../components/ui";
-
-const LEDGER_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_LEDGER;
-const SEAL_ADDRESS   = process.env.NEXT_PUBLIC_CONTRACT_SEAL;
 const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export default function DashboardPage() {
@@ -240,10 +237,10 @@ function SeloCard({ selo }) {
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <Link href={`/verify/11155111/${process.env.NEXT_PUBLIC_CONTRACT_SEAL}/${selo.tokenId}`} className="btn-forest" style={{ width: "100%", justifyContent: "center", fontSize: "0.875rem", padding: "9px 16px" }}>
+        <Link href={`/verify/11155111/${SEAL_ADDRESS}/${selo.tokenId}`} className="btn-forest" style={{ width: "100%", justifyContent: "center", fontSize: "0.875rem", padding: "9px 16px" }}>
           Ver auditoria completa
         </Link>
-        <a href={`https://sepolia.etherscan.io/token/${process.env.NEXT_PUBLIC_CONTRACT_SEAL}?a=${selo.tokenId}`} target="_blank" rel="noopener noreferrer"
+        <a href={`https://sepolia.etherscan.io/token/${SEAL_ADDRESS}?a=${selo.tokenId}`} target="_blank" rel="noopener noreferrer"
           style={{ width: "100%", textAlign: "center", border: "1px solid var(--color-gt-hairline)", color: "var(--color-gt-ink-mute)", fontSize: "0.75rem", fontWeight: 600, padding: "8px", borderRadius: "var(--radius-gt-md)", transition: "background 0.15s" }}
           onMouseEnter={(e) => (e.currentTarget.style.background = "var(--color-gt-canvas-soft)")}
           onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}

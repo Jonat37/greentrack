@@ -1,10 +1,14 @@
 import { ethers } from "ethers";
 import LedgerABI from "../lib/RecyclingLedgerABI.json";
 import SealABI from "../lib/GreenSealABI.json";
+import { cleanEnv } from "./cleanEnv";
 
-const LEDGER_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_LEDGER;
-const SEAL_ADDRESS   = process.env.NEXT_PUBLIC_CONTRACT_SEAL;
-const RPC_URL        = process.env.NEXT_PUBLIC_RPC_URL;
+// Endereços sanitizados (cleanEnv remove BOM/espaços que a CLI do Windows pode
+// grudar no valor e quebram o ethers como "ENS name"), com fallback público.
+
+export const LEDGER_ADDRESS = cleanEnv(process.env.NEXT_PUBLIC_CONTRACT_LEDGER) || "0x602AE94DAbA2D99a0253c5e010a3d9dc77ACB616";
+export const SEAL_ADDRESS   = cleanEnv(process.env.NEXT_PUBLIC_CONTRACT_SEAL)   || "0x46769676B561D5981F2569A57a4de5ABA78fD011";
+const RPC_URL               = cleanEnv(process.env.NEXT_PUBLIC_RPC_URL)         || "https://sepolia.infura.io/v3/99ef2b815dc94389ac1728038f287999";
 const SEPOLIA_CHAIN_ID = "0xaa36a7";
 const SEPOLIA_CHAIN_ID_NUM = 11155111;
 

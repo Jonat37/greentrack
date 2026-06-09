@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useWallet } from "../../contexts/WalletContext";
-import { getLedgerReadOnly, getSealReadOnly, getVerifyUrl } from "../../utils/contract";
+import { getLedgerReadOnly, getSealReadOnly, getVerifyUrl, SEAL_ADDRESS } from "../../utils/contract";
 import QRDisplay from "../../components/QRDisplay";
 import { TopNav, AnimatedCounter, Reveal, Loader, Notice, Badge } from "../../components/ui";
 import { EvidenceLink } from "../../components/EvidenceModal";
@@ -192,7 +192,7 @@ export default function CooperativaPage() {
                       </div>
                       <p className="gt-caption" style={{ color: "var(--color-gt-ink-mute)", marginBottom: 12 }}>{s.kg.toLocaleString("pt-BR")} kg certificados</p>
                       <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}><QRDisplay url={getVerifyUrl(s.tokenId)} compact /></div>
-                      <Link href={`/verify/11155111/${process.env.NEXT_PUBLIC_CONTRACT_SEAL}/${s.tokenId}`} className="btn-forest" style={{ width: "100%", justifyContent: "center", fontSize: "0.8125rem", padding: "8px", marginBottom: 8 }}>
+                      <Link href={`/verify/11155111/${SEAL_ADDRESS}/${s.tokenId}`} className="btn-forest" style={{ width: "100%", justifyContent: "center", fontSize: "0.8125rem", padding: "8px", marginBottom: 8 }}>
                         Ver auditoria
                       </Link>
                       <Link href={`/empresa/${encodeURIComponent(s.empresaId)}`}

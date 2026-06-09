@@ -3,9 +3,10 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { ethers } from "ethers";
 import LedgerABI from "../lib/RecyclingLedgerABI.json";
+import { cleanEnv } from "../utils/cleanEnv";
 
-const LEDGER_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_LEDGER;
-const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL;
+const LEDGER_ADDRESS = cleanEnv(process.env.NEXT_PUBLIC_CONTRACT_LEDGER) || "0x602AE94DAbA2D99a0253c5e010a3d9dc77ACB616";
+const RPC_URL = cleanEnv(process.env.NEXT_PUBLIC_RPC_URL) || "https://sepolia.infura.io/v3/99ef2b815dc94389ac1728038f287999";
 const SEPOLIA_CHAIN_ID = "0xaa36a7";
 
 const DEFAULT_ADMIN_ROLE = ethers.ZeroHash;
