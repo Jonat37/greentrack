@@ -68,6 +68,7 @@ export function WalletProvider({ children }) {
       const addr = accounts[0];
       setAddress(addr);
       await checkRoles(addr);
+      setLoaded(true); // garante o redirect mesmo se o efeito de montagem saiu antes do ethereum existir
       return addr;
     } finally {
       setLoading(false);
@@ -84,7 +85,7 @@ export function WalletProvider({ children }) {
   }, [address, checkRoles]);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !window.ethereum) return;
+    if (typeof window === "undefined" || !window.ethereum) { setLoaded(true); return; }
     window.ethereum.request({ method: "eth_accounts" }).then(async (accounts) => {
       if (accounts[0]) {
         setAddress(accounts[0]);
